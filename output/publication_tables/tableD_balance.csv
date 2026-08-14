@@ -1,0 +1,13 @@
+Unit,Group,Population (2020),Mean Shooting Rate (2018-22),Mean Robbery Rate (2018-22)
+Bronx,NYC Borough (treated),"1,472,654",23.8,264.5
+Brooklyn,NYC Borough (treated),"2,736,074",16.2,146.7
+Manhattan,NYC Borough (treated),"1,694,251",10.5,196.4
+Queens,NYC Borough (treated),"2,405,464",7.5,111.4
+Staten Island,NYC Borough (treated),"  495,747",6.1,52.2
+Baltimore,Comparison City,"  585,708",100.2,115.9
+Boston,Comparison City,"  675,647",25.7,136.3
+Buffalo,Comparison City,"  278,349",83.4,NA
+Chicago,Comparison City,"2,746,388",105.7,289.9
+Philadelphia,Comparison City,"1,603,797",83.5,314.5
+Rochester,Comparison City,"  211,328",114.9,NA
+Syracuse,Comparison City,"  148,620",84.1,NA

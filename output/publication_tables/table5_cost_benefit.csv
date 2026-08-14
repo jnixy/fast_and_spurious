@@ -1,0 +1,26 @@
+component,value
+COSTS,NA
+Excess pursuit crashes,676
+"Estimated fatalities (1.0% of crashes, central scenario)",6.8
+Fatality cost (at VSL),"$84,500,000"
+"Estimated injuries (35% of crashes, 1.5 per crash)",355
+Injury cost (blended serious/minor),"$70,980,000"
+Property damage,"$13,520,000"
+TOTAL CRASH COSTS,"$168,906,524"
+NA,NA
+BENEFITS,NA
+Monthly robbery change (ITS counterfactual residual),-263.4
+Monthly shooting change (ITS counterfactual residual),-27.2
+"Total robbery benefit (ITS upper bound, 100% attribution)","$434,664,284"
+"Total shooting benefit (ITS upper bound, 100% attribution)","$3,782,860,877"
+TOTAL CRIME BENEFITS (100% attribution),"$4,217,525,161"
+NA,NA
+NET ASSESSMENT,NA
+Net cost (costs - benefits),"$4,048,618,637"
+Benefit-cost ratio,24.97
+NA,NA
+BREAK-EVEN REQUIREMENTS,NA
+Robberies prevented needed to break even,411
+Shootings prevented needed to break even,121
+Monthly robbery reduction needed (as % of baseline),0.9%
+Monthly shooting reduction needed (as % of baseline),3.1%

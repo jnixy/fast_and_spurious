@@ -1,0 +1,11 @@
+outcome,term,estimate,se_nw,p_value
+Robberies,Level shift,169.3,150.5,0.264
+Robberies,Slope change,-26.9,8.7,0.003
+Shootings,Level shift,-26.1,10.4,0.014
+Shootings,Slope change,-2.9,0.4,0
+Pursuits,Level shift,250.3,79,0.002
+Pursuits,Slope change,-3.8,3.3,0.255
+Collisions,Level shift,24.6,8.5,0.005
+Collisions,Slope change,-0.4,0.4,0.306
+Gun Violence,Level shift,-124.9,34.6,0.001
+Gun Violence,Slope change,-8.1,1.1,0

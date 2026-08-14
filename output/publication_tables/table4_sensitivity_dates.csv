@@ -1,0 +1,26 @@
+intervention_date,outcome,level_shift,p_value,sig
+Sep 2022,Robberies,169.4,0.102,
+Oct 2022,Robberies,169.3,0.101,
+Nov 2022,Robberies,156.4,0.128,
+Dec 2022,Robberies,121,0.241,
+Jan 2023,Robberies,128.5,0.214,
+Sep 2022,Shootings,-24.4,0.021,*
+Oct 2022,Shootings,-26.1,0.014,*
+Nov 2022,Shootings,-25.2,0.019,*
+Dec 2022,Shootings,-25.5,0.019,*
+Jan 2023,Shootings,-26.5,0.016,*
+Sep 2022,Pursuits,231.7,0,***
+Oct 2022,Pursuits,250.3,0,***
+Nov 2022,Pursuits,272.8,0,***
+Dec 2022,Pursuits,294.2,0,***
+Jan 2023,Pursuits,307.9,0,***
+Sep 2022,Collisions,21.9,0,***
+Oct 2022,Collisions,24.6,0,***
+Nov 2022,Collisions,26.6,0,***
+Dec 2022,Collisions,27.1,0,***
+Jan 2023,Collisions,28.9,0,***
+Sep 2022,Gun Violence,-122.6,0,***
+Oct 2022,Gun Violence,-124.9,0,***
+Nov 2022,Gun Violence,-120.2,0,***
+Dec 2022,Gun Violence,-120.9,0,***
+Jan 2023,Gun Violence,-119.3,0,***

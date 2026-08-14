@@ -1,0 +1,6 @@
+outcome,estimate,se,t_stat,p_value,direction,interpretation
+Pursuit Broadcasts,-90.17732401222841,9.810349965520121,-9.192059847933,5.728380244554601e-14,decrease,Expected: pursuits fell after re-restriction
+Pursuit Collisions,-15.178347861499573,4.593321222176088,-3.3044385810032297,0.0014535276794083267,decrease,Expected: pursuits fell after re-restriction
+Robberies,81.26566354398396,59.088296630261034,1.3753258797168504,0.17307094124923328,increase,Consistent with deterrence: crime rose after re-restriction
+Shooting Incidents,-3.410401975592264,7.770826696811271,-0.43887247890777303,0.6619991096563127,decrease,Inconsistent with deterrence: crime did NOT rise after re-restriction
+Gun Violence (Shootings + Shots Fired),20.730969501783232,18.543289346351695,1.1179769195513283,0.26709836943561455,increase,Consistent with deterrence: crime rose after re-restriction

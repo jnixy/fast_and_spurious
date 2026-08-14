@@ -1,0 +1,61 @@
+window_label,period,alpha_val,month_date,shooting_incidents,robbery_count,rel_month,color_group
+Oct 2019–Sep 2020,pre,0.5,2019-10-01,62,1379,1,Pre
+Oct 2019–Sep 2020,pre,0.5,2019-11-01,51,1169,2,Pre
+Oct 2019–Sep 2020,pre,0.5,2019-12-01,56,1230,3,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-01-01,66,1309,4,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-02-01,45,1211,5,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-03-01,56,950,6,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-04-01,56,698,7,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-05-01,100,812,8,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-06-01,205,981,9,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-07-01,243,1151,10,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-08-01,241,1307,11,Pre
+Oct 2019–Sep 2020,pre,0.5,2020-09-01,150,1185,12,Pre
+Oct 2020–Sep 2021,pre,0.5,2020-10-01,135,1251,1,Pre
+Oct 2020–Sep 2021,pre,0.5,2020-11-01,116,1158,2,Pre
+Oct 2020–Sep 2021,pre,0.5,2020-12-01,119,1174,3,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-01-01,76,937,4,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-02-01,77,818,5,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-03-01,99,849,6,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-04-01,148,903,7,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-05-01,172,1191,8,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-06-01,165,1135,9,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-07-01,157,1274,10,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-08-01,165,1168,11,Pre
+Oct 2020–Sep 2021,pre,0.5,2021-09-01,136,1298,12,Pre
+Oct 2021–Sep 2022,pre,0.8,2021-10-01,128,1482,1,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2021-11-01,119,1419,2,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2021-12-01,120,1387,3,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-01-01,99,1275,4,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-02-01,75,1299,5,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-03-01,115,1263,6,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-04-01,105,1276,7,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-05-01,117,1512,8,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-06-01,125,1572,9,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-07-01,175,1754,10,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-08-01,115,1659,11,Pre (immediate)
+Oct 2021–Sep 2022,pre,0.8,2022-09-01,117,1529,12,Pre (immediate)
+Oct 2022–Sep 2023,post,1,2022-10-01,86,1499,1,Post Year 1
+Oct 2022–Sep 2023,post,1,2022-11-01,80,1516,2,Post Year 1
+Oct 2022–Sep 2023,post,1,2022-12-01,85,1285,3,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-01-01,74,1350,4,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-02-01,63,1179,5,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-03-01,85,1265,6,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-04-01,71,1239,7,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-05-01,85,1358,8,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-06-01,104,1460,9,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-07-01,113,1536,10,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-08-01,87,1575,11,Post Year 1
+Oct 2022–Sep 2023,post,1,2023-09-01,77,1445,12,Post Year 1
+Oct 2023–Sep 2024,post,1,2023-10-01,78,1565,1,Post Year 2
+Oct 2023–Sep 2024,post,1,2023-11-01,65,1384,2,Post Year 2
+Oct 2023–Sep 2024,post,1,2023-12-01,72,1566,3,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-01-01,65,1429,4,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-02-01,53,1252,5,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-03-01,64,1297,6,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-04-01,60,1344,7,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-05-01,88,1477,8,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-06-01,107,1446,9,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-07-01,91,1512,10,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-08-01,74,1494,11,Post Year 2
+Oct 2023–Sep 2024,post,1,2024-09-01,91,1371,12,Post Year 2

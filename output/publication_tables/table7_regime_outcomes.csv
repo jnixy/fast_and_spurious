@@ -1,0 +1,5 @@
+regime,months,mean_pursuits,sd_pursuits,mean_crashes,crash_rate,mean_robberies,mean_shootings,mean_gun_events
+Pre-escalation (Jan 2018–Sep 2022),57,7.7,4.4,5.5,71.5%,1168.2,99.4,302.2
+Escalation (Oct 2022–Jul 2023),10,87.9,42.2,16.6,18.9%,1368.7,84.6,268.6
+Post-Maddrey (Aug 2023–Jan 2025),18,159.3,31.1,34.4,21.6%,1400.6,74.1,239.8
+Post-Tisch (Feb 2025–Dec 2025),11,34.1,11.1,8.1,23.7%,1267.4,58,210.5

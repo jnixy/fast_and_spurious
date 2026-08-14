@@ -1,0 +1,6 @@
+city,state,year,n_months,zero_months,total_count,flag_reason
+Chandler,AZ,2018,12,12,0,All months zero in this year
+Chandler,AZ,2019,12,12,0,All months zero in this year
+Chandler,AZ,2020,12,12,0,All months zero in this year
+Irvine,CA,2018,12,12,0,All months zero in this year
+Irvine,CA,2021,12,12,0,All months zero in this year

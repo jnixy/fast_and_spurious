@@ -1,0 +1,5 @@
+outcome,n_pre,chi2,df,df2,p_joint
+Shooting incidents,7,5.372,7,76,0
+Robbery,7,5.493,7,76,0
+Gun violence,7,8.856,7,76,0
+Pursuit crashes,7,1.331,7,76,0.2475

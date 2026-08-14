@@ -1,0 +1,821 @@
+---
+title: "The Fast and the Spurious: A Causal Evaluation of NYPD's Pursuit Policy, 2022–2025"
+author:
+  - name: John Hall
+    affiliations:
+      - name: "University of Cambridge"
+    orcid: "0009-0000-3849-0533"
+    email: jjh97@cam.ac.uk
+    corresponding: true
+  - name: Justin Nix
+    affiliations:
+      - name: "University of Nebraska at Omaha"
+        department: "School of Criminology and Criminal Justice"
+    orcid: "0000-0002-3812-8590"
+    email: jnix@unomaha.edu
+date: today
+format:
+  pdf:
+    pdf-engine: xelatex
+    documentclass: article
+    geometry: margin=1in
+    fontsize: 11pt
+    linestretch: 2
+    number-sections: false
+  docx:
+    number-sections: false
+bibliography: ../references.bib
+csl: ../springer-basic-author-date.csl
+abstract: |
+  **Objectives:** This study examines the consequences of the New York City Police Department’s late-2022 operational shift that dramatically expanded vehicle pursuits without a formal policy change. We evaluate whether the surge in pursuits affected motor vehicle collisions, robberies, and shootings, and whether any crime-prevention benefits offset the associated collision costs.
+  **Methods:** For collision outcomes, interrupted time series (ITS) segmented regression provides direct causal estimates. For crime outcomes, we apply three complementary within-NYC designs—city-level ITS, borough-level ITS, and a precinct-level heterogeneous-effects difference-in-differences (DiD) design—along with a generalized synthetic control comparing New York with large U.S. cities. A cost–benefit analysis estimates the threshold of prevented crimes needed for pursuit escalation to break even.
+  **Results:** Monthly pursuits rose from roughly 8 per month and peaked above 200. Pursuit-related collisions increased proportionally with pursuit volume across all four policy regimes and declined sharply following the February 2025 policy re-restriction. This is the paper's primary causal finding. Crime outcomes provide no evidence of deterrence: the robbery DiD estimate is positive and significant; the shooting DiD estimate, though nominally negative, rests on non-parallel pre-trends. The generalized synthetic control finds NYC's post-2022 shooting trajectory statistically indistinguishable from the national counterfactual. The February 2025 reduction in pursuits was not followed by any increase in crime.
+  **Conclusions:** Pursuit escalation produced clear and attributable collision harms while providing no credible evidence of crime reduction. Cost–benefit estimates suggest the threshold of prevented shootings required to offset these harms was not achieved. Agencies should require affirmative evidence of crime-prevention benefits before expanding pursuit authority.
+keywords:
+  - vehicle pursuits
+  - police policy
+  - public safety
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| include: false
+
+library(tidyverse)
+library(here)
+library(knitr)
+library(flextable)
+library(magick)
+
+# Suppress flextable font injection in LaTeX output — fixes XeTeX incompatibility
+# (\setmainfont inside table cells is invalid; fonts_ignore = TRUE removes it)
+set_flextable_defaults(fonts_ignore = TRUE)
+
+# Load publication tables
+table1 <- read_csv(here("output", "publication_tables", "table1_annual_summary.csv"),
+                   show_col_types = FALSE)
+table2a <- read_csv(here("output", "publication_tables", "table2a_its_segmented.csv"),
+                    show_col_types = FALSE)
+table5 <- read_csv(here("output", "publication_tables", "table5_cost_benefit.csv"),
+                   show_col_types = FALSE)
+table5b <- read_csv(here("output", "publication_tables", "table5b_net_assessment.csv"),
+                    show_col_types = FALSE)
+table7 <- read_csv(here("output", "publication_tables", "table7_regime_outcomes.csv"),
+                   show_col_types = FALSE)
+table8 <- read_csv(here("output", "publication_tables", "table8_multibreak.csv"),
+                   show_col_types = FALSE)
+table9 <- read_csv(here("output", "publication_tables", "table9_tisch_reversal.csv"),
+                   show_col_types = FALSE)
+library(scales)
+
+# ITS Newey-West results
+its_nw <- read_csv(here("output", "its_results", "its_newey_west.csv"), show_col_types = FALSE)
+
+# Borough-level ITS results
+its_boro_coef <- read_csv(here("output", "its_results", "its_borough_coefficients.csv"),
+                          show_col_types = FALSE)
+its_boro_intensity <- read_csv(here("output", "its_results", "its_borough_pursuit_intensity.csv"),
+                                show_col_types = FALSE)
+
+# Precinct-level analysis (script 17: heterogeneous-effects DD)
+pct_ddd_all      <- read_csv(here("output", "precinct_did", "pct_ddd_results.csv"),
+                              show_col_types = FALSE)
+# Inline references use the median-split estimates throughout
+pct_ddd          <- pct_ddd_all |> filter(spec == "median")
+pct_ddd_es_shoot <- read_csv(here("output", "precinct_did", "pct_ddd_es_shooting.csv"),
+                              show_col_types = FALSE)
+pct_ddd_es_rob   <- read_csv(here("output", "precinct_did", "pct_ddd_es_robbery.csv"),
+                              show_col_types = FALSE)
+
+# Joint Wald pre-trend tests (script 17 section 2b — generated after re-run)
+wald_pre_path <- here("output", "precinct_did", "pct_wald_pre_trends.csv")
+if (file.exists(wald_pre_path)) {
+  wald_pre <- read_csv(wald_pre_path, show_col_types = FALSE)
+} else {
+  wald_pre <- NULL
+}
+
+# Pursuit-by-group summary (script 17 section 2b — generated after re-run)
+pursuit_group_path <- here("output", "precinct_did", "pct_pursuit_by_group.csv")
+if (file.exists(pursuit_group_path)) {
+  pursuit_by_group_summary <- read_csv(pursuit_group_path, show_col_types = FALSE)
+} else {
+  pursuit_by_group_summary <- NULL
+}
+
+# gsynth results (script 18)
+gsynth_att <- read_csv(here("output", "gsynth_results", "gsynth_att.csv"),
+                       show_col_types = FALSE)
+gsynth_clean <- gsynth_att |> filter(grepl("SUTVA", donor_pool))
+gsynth_full  <- gsynth_att |> filter(grepl("Full", donor_pool))
+
+# gsynth placebo-in-space permutation inference (script 19)
+gsynth_perm <- read_csv(here("output", "gsynth_results", "gsynth_perm_summary.csv"),
+                         show_col_types = FALSE)
+gsynth_perm_att  <- gsynth_perm |> filter(statistic == "ATT (avg)")
+gsynth_perm_mspe <- gsynth_perm |> filter(statistic == "MSPE ratio")
+
+# APA-style p-value formatter (no leading zero)
+fmt_p <- function(x, digits = 3, eps = .001) {
+  if (length(x) == 0 || is.na(x)) return("NA")
+  gsub("0\\.", ".", format.pval(x, digits = digits, eps = eps))
+}
+
+# Full "= .XXX" / "< .001" statement, for use after "*p*" without a hardcoded "="
+# (fmt_p() alone returns "<.001" for tiny p-values, which reads as "p = <.001"
+# if the template hardcodes "=" — this supplies the correct comparison operator)
+fmt_p_stmt <- function(x, digits = 3, eps = .001) {
+  v <- fmt_p(x, digits = digits, eps = eps)
+  if (grepl("^<", v)) paste("<", sub("^<", "", v)) else paste("=", v)
+}
+```
+
+# Introduction
+
+Vehicle pursuits are among the most dangerous activities in American policing. From 2009 to 2023, pursuit-related crashes in the United States killed an average of 423 people per year, and roughly one-third of those killed were bystanders with no involvement in the chase [@Hendrix2026; @rivara2004motor]. Adjusting for population and overall crash volume, pursuit fatality risk rose approximately 2% annually over that period, and deaths cluster in identifiable settings — urban areas, nighttime hours, and non-interstate roads [@Hendrix2026; see also @alpert1986most; @hill2002high]. Police departments have been writing and rewriting pursuit policies for decades, under substantial public pressure and with remarkably little empirical guidance [@alpert1997pucker; @hicks2003police].
+
+Despite the stakes, empirical evidence on the effects of pursuit policy changes remains thin. Case studies show that pursuit frequency responds sharply to policy, but none has rigorously estimated the resulting effects on crime, collisions, and public safety using modern causal methods. The question that @rivara2004motor posed two decades ago — whether "the trade-off of fewer pursuit-related crashes and deaths [is] offset by a higher number of fatal crimes" — remains unanswered.
+
+The New York City Police Department's experience beginning in late 2022 offers a rare opportunity to address this question. Under Mayor Eric Adams's quality-of-life enforcement mandate and new Chief of Patrol John Chell, the NYPD dramatically escalated its use of vehicle pursuits without any formal revision to the department's written Patrol Guide procedure on pursuits. Monthly pursuits rose from an average of eight before the escalation to more than 200 at their peak, a 25-fold increase. Two further policy changes followed. In August 2023, Chief of Department Jeffrey Maddrey issued a compliance memo, and in February 2025, Commissioner Jessica Tisch formally revised the policy to permit pursuits only for felonies and violent misdemeanors. The result is a multi-phase natural experiment in which pursuit intensity varied dramatically across distinct policy regimes within a single jurisdiction.
+
+We exploit this variation to estimate the effects of pursuit escalation on motor vehicle collisions, robberies, and gun violence. For collision outcomes, the causal pathway is direct and theoretically unambiguous: more pursuits create more collision risk. An interrupted time-series (ITS) model provides well-identified causal estimates. The collision finding is the paper's primary causal contribution.
+
+Crime outcomes pose a harder identification problem because within-city trends may reflect secular forces unrelated to pursuit policy. We therefore triangulate across city- and borough-level time-series analyses, a precinct-level heterogeneity design, and a national comparison. We also examine whether crime increased after the February 2025 restriction sharply reduced pursuits, providing an internal test of the deterrence mechanism.
+
+# Background
+
+## Vehicle Pursuit Policy in American Policing
+
+Police vehicle pursuits have been a subject of scholarly and legal scrutiny since the mid-1980s, when @alpert1986most described the police vehicle as "the most deadly force" in an officer's arsenal. Despite the risks, pursuit policy remained largely unregulated through the early 1980s, with most departments permitting officers broad discretion to initiate and continue pursuits [@kennedy1992comparative]. The first wave of reform resulted from mounting civil liability under 42 U.S.C. § 1983, which exposed departments to lawsuits when pursuits resulted in injuries to bystanders or suspects [@alpert1997constitutional; @oconnor2005police].
+
+By the late 1990s, pursuit policies had coalesced around three general types [@alpert1997pucker; @kenney1997national]. *Judgmental* policies grant officers wide discretion to engage in pursuits based on their assessment of the situation. *Restrictive* policies limit pursuits to specific offense categories (typically violent felonies) and impose conditions related to speed, traffic density, and weather. *Discouragement* policies formally permit pursuits but establish a strong institutional presumption against them, coupled with mandatory supervisory review and potential discipline. A 1997 national survey of 436 agencies found that 48% had revised pursuit policies within the preceding two years (87% toward greater restrictions), yet variation persisted. Some agencies reported zero annual pursuits, others over 800 [@kenney1997national].
+
+The literature describes a consistent pattern. Pursuits usually involve young men fleeing traffic stops or stops involving stolen vehicles. They tend to occur at night on local roads, last less than five minutes, and end when the driver stops, the officer terminates the pursuit, or a crash occurs [@alpert1988research; @alpert1989hot; @hoffmann2005pursuits; @crew1999assessing]. An estimated 20–40% end in a crash, 12–41% result in injury, and about 1% result in death [@alpert1988research; @kenney1997national]. Between 1994 and 2002, @rivara2004motor documented 2,654 fatal pursuit-related crashes in the United States (an average of 295 per year) resulting in 3,146 deaths. Of these, 1,048 (33.3%) were occupants of vehicles entirely uninvolved in the pursuit or pedestrians and cyclists. More recent national data show no improvement. Using Fatality Analysis Reporting System (FARS) records from 2009 through 2023, @Hendrix2026 identified 5,425 fatal pursuit crashes and 6,352 deaths, or about 423 deaths per year. After accounting for population growth and overall crash frequency, they found that fatality risk rose by roughly 2% each year. The South had the highest rate and the Northeast the lowest. Fifty-seven percent of fatal crashes occurred in urban areas, and 70% occurred at night.
+
+The Police Executive Research Forum (PERF), the National Highway Traffic Safety Administration (NHTSA), and the Justice Department's Office of Community Oriented Policing Services (COPS Office) recently distilled this research into 65 recommendations [@perf2023vehicular]. Its central principle is that pursuit policy should balance the risk of immediate apprehension failure against the danger to officers, suspects, and uninvolved bystanders. PERF's recommended default standard, which limits pursuits to violent crimes and situations posing an imminent threat to public safety, follows the restrictive model that emerged from the liability-driven reforms of the 1990s while placing it within an explicit risk-management framework.
+
+The offense triggering a pursuit often does not justify the risks incurred. @hoffmann2005pursuits, for example, found that "very few apprehended drivers were charged with crimes more serious than what was known at the time the pursuit was initiated." However, @alpert1988research remind us that while it is true many pursuits begin with traffic violations, a nontrivial share of apprehended suspects are subsequently charged with serious felonies unrelated to the pursuit itself. This suggests that pursuits sometimes uncover criminality that would not otherwise have been detected, albeit at substantial cost.
+
+## Theory and Evidence: Two Channels
+
+Pursuit policy operates through two channels that differ in the strength of the causal claim each supports. Collisions follow mechanically from pursuit volume. Crime effects, by contrast, materialize only if pursuit escalation actually changes offender behavior — a harder identification problem, since within-city crime trends may reflect secular forces unrelated to pursuit policy. The theoretical mechanisms, the evidence base, and the identification burden differ accordingly, and this distinction organizes the discussion below.
+
+### The Collision Channel
+
+The argument to constrain officer discretion to pursue emphasizes the potential for collateral harms. Pursuits impose externalities on third parties who were not involved in the precipitating offense. @rivara2004motor found that 33.3% of pursuit fatalities were occupants of vehicles entirely uninvolved in the pursuit, pedestrians, or cyclists.^[The public has expressed ambivalence about this trade-off: @macdonald1998public found that while citizens support police pursuits in principle, support dwindles when pursuits involve minor offenses or result in bystander injuries. In a recent survey experiment, @mourtgos2026risk demonstrated that public judgments of pursuit appropriateness are sensitive to both the severity of the triggering offense and the risk to bystanders.] @rangehutson2007review documented similar patterns in a review of pursuit fatalities from 1982 through 2004.
+
+Rigorous evaluation of how pursuit policy shapes this collision channel comes chiefly from a pair of natural experiments in the 1990s. When Dade County, Florida, restricted pursuits to violent felons in 1992, pursuit frequency dropped by 82% and pursuit-related injuries decreased, with no observed increase in crime rates or the number of suspects fleeing from police [@hoffmann2005pursuits; @alpert1994police]. Conversely, when Omaha, Nebraska, relaxed its pursuit policy in 1993, pursuit frequency increased by over 600% [@alpert1997constitutional]. These cases are suggestive, but they predate modern causal inference methods and lack rigorous comparison groups.
+
+Recent evaluations have added more systematic evidence, including several pre-/post-test designs. The @policingproject2021roanoke conducted a formal cost-benefit analysis of policy changes in two Virginia jurisdictions, finding that Roanoke County's 2013 adoption of a restrictive policy reduced pursuit frequency and harm without measurable crime increases, while arrest rates for serious offenses were unchanged. @hosking2021policy examined two waves of reform in Queensland, Australia, documenting that restrictive policies reduced pursuit-related injuries without generating the crime consequences that critics predicted, though initial officer resistance weakened implementation. @butler2018milwaukee found that Milwaukee's 2017 policy liberalization led to a 155% increase in pursuits the following year, accompanied by a rise in pursuit-related collisions. @rivara2025washington studied pursuit outcomes in 64 Washington State agencies from 2019 through 2024. Pursuits often began with traffic violations and posed substantial injury risk. Because the state tightened its rules in 2021–2022 and partially reversed them in 2024, the study period spans several enforcement environments. @aronie2020blackjack synthesized the cumulative evidence to argue that the data "strongly favor a restrictive pursuit policy," noting that approximately 91% of pursuits are initiated for non-violent offenses and roughly 30% result in a crash. The evidence thus establishes the direction of the relationship. Policy affects pursuit volume, and pursuit volume affects harm. The question for the present study is how precisely those effects can be estimated.
+
+### The Crime Channel
+
+The case for broader pursuit authority rests primarily on deterrence theory. General deterrence holds that the credible threat of apprehension discourages potential offenders from fleeing and, more broadly, from committing crimes likely to bring them into contact with police [@senese1996pursue]. Specific deterrence holds that apprehended and sanctioned offenders are less likely to reoffend, having experienced the costs of criminal activity firsthand. Incapacitation provides a related but distinct mechanism. Arrest and detention temporarily remove suspects from the offending population, reducing crime during the period of confinement. Because pursuit escalation raises the perceived certainty of apprehension without altering sanction severity, it acts on precisely the margin the deterrence literature identifies as most likely to produce a behavioral response [@chalfin2017criminal; @nagin2013deterrence]. A null on this margin is therefore more informative than a null on severity would be
+
+Though these mechanisms seem straightforward, there are at least three potential complications that must be considered. First, deterrence through pursuit requires that potential offenders are aware of the prevailing policy and update their behavior accordingly. While formal policy changes may receive limited public attention, a dramatic operational shift, such as a visible, sustained increase in vehicle pursuits, may communicate enforcement intensity through experiential channels even without formal announcements [@homant1994risk]. Second, the deterrence benefit of pursuits depends critically on the apprehension rate. If pursued suspects frequently escape, as they do in roughly 30% of cases [@alpert1988research], the deterrence signal is weakened. Third, deterrence theory assumes rational calculation by offenders, yet the population of fleeing drivers is disproportionately young, male, intoxicated, and unlicensed [@rivara2004motor], characteristics associated with impaired risk assessment. ^[Research on perceptual deterrence provides more specific theoretical mechanisms for this limitation. @pogarsky2017heuristics demonstrated that potential offenders rely on cognitive heuristics (e.g., anchoring, availability, and question substitution) rather than coherent probability estimates, especially under time pressure. @barnum2021sanction further showed that person-specific cognitive biases can decouple perceived apprehension risk from actual enforcement intensity, a decoupling most acute for the young, impulsive, intoxicated population disproportionately represented among fleeing drivers.]
+
+Only a handful of studies have examined how pursuit policies affect crime. @hicks2006police surveyed state-level pursuit policies and documented substantial variation in restrictiveness but did not link policy variation to outcomes. @wade2014highrisk developed a pursuit risk classification system but focused on individual pursuit characteristics rather than policy-level effects. @crew1999assessing attempted a cost-benefit framework for pursuit decisions but lacked the outcome data to conduct a full welfare analysis. Cataloguing the 44 empirical pursuit studies conducted since 1970, @alpert2014pursuit reached a sobering conclusion: none had examined the effect of restrictive policies on general crime rates. Decades of research have documented pursuit patterns and outcomes without producing causal evidence on the question policymakers actually face.
+
+Across these studies, restrictive policies consistently reduce pursuits and pursuit-related harm. The lack of accompanying crime spikes is suggestive, but it is not causal evidence. Prior work cannot distinguish a policy effect from a coincident secular crime decline. The NYPD's escalation, stabilization, and re-restriction within three years provide an unusually rich setting in which to address this gap.
+
+## The NYPD Policy Change
+
+The NYPD's pursuit escalation unfolded in three distinct phases. The first began in late 2022, alongside John Chell's appointment as Chief of Patrol in December and Mayor Adams's broader emphasis on quality-of-life enforcement. Monthly pursuits increased from 32 in November 2022 to 53 in December and 133 in January 2023, exceeding the combined total for 2018 and 2019. Crucially, no formal change to the department's written vehicle pursuit procedure (PG 212-39) accompanied this shift. Rather, the increase reflected an enforcement posture emphasizing aggressive pursuit of "ghost cars," ATVs, and vehicles with illegal plates. By the end of the first quarter of 2023, the NYPD recorded 304 pursuits, a roughly 600% increase over the same period the prior year. Chief Chell publicly defended the surge: “People thinking they can take off on us? Those days are over” [@brosnan2023nypd].
+
+The second phase began in August 2023, when Chief of Department Jeffrey Maddrey circulated an internal memo reminding officers to follow existing Patrol Guide guidelines and emphasizing that pursuits "must be terminated when risks outweigh the danger of delayed apprehension" [@gonen2023nypd]. The memo listed relevant risk factors (e.g., nature of offense, time of day, weather, population density) and stressed supervisory responsibility and possible discipline for noncompliance. However, it did not narrow the offense categories that could trigger a pursuit. The memo therefore reinforced compliance rather than changing policy. Pursuit volume remained high throughout 2024, with quarterly counts approaching 600.
+
+The third phase began in February 2025, when Commissioner Jessica Tisch implemented the first rewrite of the pursuit procedure since the pursuit surge began. The new policy restricted pursuits to felonies and violent misdemeanors, explicitly excluding traffic infractions, violations, and non-violent misdemeanors. It also protected officers from discipline for good-faith decisions to terminate a pursuit and imposed stricter risk-assessment requirements near homes, schools, and playgrounds. The NYPD reported that 67% of 2024 pursuits began when drivers fled traffic stops, scenarios that would no longer satisfy the revised criteria. Pursuits fell 66% in the first two weeks after implementation.
+
+# Data and Methods
+
+## Data Sources
+
+We draw on five administrative data series from NYC Open Data. *Calls for service* records (January 2018 through December 2025) identify pursuit-related radio broadcasts, from which we aggregate monthly pursuit event counts. The ITS analysis window begins January 2018. *Motor vehicle collision* records (2016 through December 2025) report vehicle-level crash involvement; we collapse to the incident level and identify pursuit-related crashes using the pre-crash condition field, which designates "Police Pursuit" as the precipitating circumstance (an administrative classification applied by officers in the collision reporting system). *NYPD complaint data* (January 2014 through December 2025) provide monthly robbery complaint counts. *NYPD shooting incident data* (through December 2025) record victim-level shooting events; we deduplicate to the incident level using unique incident keys. *Shots-fired complaints* (beginning January 2018) capture incidents of gunfire in which no victim was struck. Table 1 summarizes annual totals for each outcome.
+
+### Measures
+
+All variables are measured at the monthly level. *Vehicle pursuit events* reflect counts of pursuit-related calls for service broadcasts, capturing the treatment itself (pre-escalation mean: `r round(table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_pursuits), 1)` events/month; post-Maddrey mean: `r round(table7 |> filter(grepl("Post-Maddrey", regime)) |> pull(mean_pursuits), 1)` events/month). *Pursuit-related motor vehicle collisions* capture incidents involving vehicles in pursuit situations (pre-escalation mean: `r round(table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_crashes), 1)` collisions/month). *Robberies* are drawn from complaint-level robbery reports (pre-escalation mean: `r comma(round(table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_robberies), 0))` complaints/month). *Shooting incidents* are from victim-level records (pre-escalation mean: `r round(table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_shootings), 1)` incidents/month). Finally, *total gun violence events* reflect the sum of shooting incidents and shots-fired reports (pre-escalation mean: `r round(table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_gun_events), 0)` events/month). We focus on robberies and shootings as our primary crime outcomes following both empirical convention and practitioner emphasis. NYPD Chief of Patrol John Chell explicitly linked expanded pursuit enforcement to these outcomes, stating that illegal vehicles "cause street violence — robberies and shootings" [@brosnan2023nypd].
+
+## Analytic Strategy
+
+We use segmented ITS to estimate collision effects. For crime, we combine city- and borough-level ITS, a 77-precinct panel, generalized synthetic control, and the February 2025 reversal. We treat the citywide ITS estimate as an upper bound rather than a causal estimate.
+
+### Interrupted Time Series (ITS)
+
+The segmented regression model is estimated on monthly data from January 2018 through December 2025 [@bernal2017interrupted; @wagner2002segmented]:
+
+$$Y_t = \beta_0 + \beta_1 T + \beta_2 D_t + \beta_3 P_t + \sum_{m=2}^{12} \gamma_m \text{Month}_m + \delta \text{COVID}_t + \varepsilon_t$$
+
+where $T$ is a linear time trend (months from start), $D_t$ is a binary indicator equal to 1 for months on or after October 2022, $P_t$ counts months elapsed since the intervention and equals 0 during the pre-intervention period, $\text{Month}_m$ terms are seasonal fixed effects, and $\text{COVID}_t$ flags the pandemic period (March 2020 through June 2021). The coefficient $\beta_2$ captures the immediate level shift at the intervention, while $\beta_3$ captures any change in the post-intervention slope. We estimate Newey-West heteroskedasticity- and autocorrelation-consistent (HAC) standard errors with a lag of 6 months [@newey1987simple], computed via R's `sandwich` package. October 2022 is chosen as the intervention date because pursuit volume began its sustained rise in that month following Mayor Adams's quality-of-life enforcement mandate and Chief of Patrol Chell's operational directives; pursuit counts quadrupled from Q3 to Q4 2022 and continued rising through 2023. Sensitivity analyses presented in Appendix B confirm that key estimates are robust to shifting the break date by ±2 months (September 2022 or December 2022).
+
+### Borough-Level Interrupted Time Series
+
+To examine within-NYC heterogeneity in crime responses, we estimate the same segmented regression model separately for each of the five NYC boroughs:
+
+$$Y_{bt} = \beta_0 + \beta_1 T + \beta_2 D_t + \beta_3 P_t + \sum_{m=2}^{12} \gamma_m \text{Month}_m + \delta \text{COVID}_t + \varepsilon_{bt}$$
+
+where subscripts $b$ and $t$ denote borough and month, respectively. The specification is identical to the city-level ITS model, and Newey-West HAC standard errors are computed with lag = 6 throughout for comparability. This analysis tests a key implication of deterrence theory. If a greater threat of apprehension reduces crime, boroughs experiencing larger increases in pursuits should show larger crime declines. Because all boroughs share the same national trends, within-city heterogeneity correlated with pursuit intensity is not confounded by city-level forces.
+
+### Precinct-Level Panel Analysis
+
+The policy change created citywide variation in pursuit exposure at the precinct level: when the department shifted enforcement posture in October 2022, which precincts actually used the new pursuit authority, and how intensively, depended on local crime patterns and operational circumstances. We exploit this cross-sectional variation through a heterogeneous-effects DiD design using a balanced panel of 77 NYPD precincts over 96 months (January 2018–December 2025; N = 7,392 precinct-months). ^[Note that the 105th Precinct was split into two (the 105th and the 116th) in December 2024; for this analysis, we treat it as a single unit throughout the study period.]
+
+**Heterogeneous-effects DiD design.** We classify precincts into high- and low-crime groups based on their mean monthly crime rate during the pre-October 2022 period, split at the median. The rationale is that precincts with higher pre-treatment crime rates are expected to have had greater tactical incentive to pursue fleeing suspects following the escalation (officers in high-crime areas face more pursuit-eligible situations), so baseline crime rate serves as a proxy for differential pursuit exposure. In the post-escalation period (October 2022–December 2025), high-robbery precincts averaged `r if (!is.null(pursuit_by_group_summary)) round(pursuit_by_group_summary |> filter(grouping_var=="robbery", group=="High robbery") |> pull(mean_pursuits), 1) else "[pending]"` pursuit broadcast events per month (SD = `r if (!is.null(pursuit_by_group_summary)) round(pursuit_by_group_summary |> filter(grouping_var=="robbery", group=="High robbery") |> pull(sd_pursuits), 1) else "[pending]"`), compared to `r if (!is.null(pursuit_by_group_summary)) round(pursuit_by_group_summary |> filter(grouping_var=="robbery", group=="Low robbery") |> pull(mean_pursuits), 1) else "[pending]"` (SD = `r if (!is.null(pursuit_by_group_summary)) round(pursuit_by_group_summary |> filter(grouping_var=="robbery", group=="Low robbery") |> pull(sd_pursuits), 1) else "[pending]"`) for low-robbery precincts, approximately twice the pursuit rate, consistent with the proxy assumption. ^[This classification is constructed entirely from pre-intervention data and is therefore predetermined with respect to the policy change. Critically, using post-treatment pursuit counts as the grouping variable would be endogenous: pursuit intensity itself is an outcome of the policy, and precincts with higher crime would be expected to generate more pursuits under any enforcement posture. By fixing the grouping on pre-intervention crime rates, we ensure that the identifying contrast cannot be contaminated by post-treatment changes in pursuit behavior or crime dynamics.] Each outcome uses its own pre-treatment baseline (e.g., the robbery analysis groups precincts by pre-treatment robbery rate, median = 13.1 incidents/month). A supplementary quartile dose-response specification assigns precincts to quartiles Q1–Q4 and tests whether the post-treatment crime change varies linearly across the quartile ranking. The intervention date is October 2022 for all precincts, a common break reflecting the citywide policy change.
+
+The DiD scalar estimate is:
+
+$$Y_{pt} = \alpha_p + \lambda_t + \beta \cdot (\text{Post}_t \times \text{HighCrime}_p) + \varepsilon_{pt}$$
+
+where $\alpha_p$ are precinct fixed effects, $\lambda_t$ are month-year fixed effects, and $\beta$ is the DiD estimate: the excess post-intervention change in crime for high-crime precincts relative to low-crime precincts. Standard errors are clustered at the precinct level (G = 77).
+
+The DiD event study specification replaces the scalar interaction with a set of relative-time interactions:
+
+$$Y_{pt} = \alpha_p + \lambda_t + \sum_{k \neq -1} \delta_k \cdot \mathbf{1}[q(t) - q(t_0) = k] \times \text{HighCrime}_p + \varepsilon_{pt}$$
+
+where $q(t) = \lfloor t / 3 \rfloor$ maps the monthly time index $t$ to its quarterly bin, $t_0 =$ October 2022, and $k$ indexes quarterly bins relative to the intervention (each bin aggregates three consecutive calendar months), referenced at $k = -1$ (July–September 2022). The Tisch reversal period (January 2025 onward, with the policy taking effect in February 2025) is pooled into a single lump bin ($k = 9$).^[Bin $k = 9$ is anchored to the quarterly structure defined relative to the October 2022 intervention and so does not align exactly with the February 2025 effective date used for the post-Tisch regime elsewhere in this paper (see Event Study / Multi-Period Analysis below); it therefore includes January 2025 (one month of Post-Maddrey data) alongside the actual post-Tisch months. It also pools all months from January 2025 through the end of the study period, rather than a single quarter, to maintain adequate within-bin precinct-months near the end of the panel.] Pre-period $\delta_k$ coefficients near zero would confirm that high- and low-crime precincts were on parallel crime trajectories before the policy change, the key identifying assumption for this design. Post-period $\delta_k$ coefficients trace the divergence between groups over time. Standard errors are clustered at the precinct level (G = 77) throughout.
+
+### Event Study / Multi-Period Analysis
+
+We define four policy regimes to examine how outcomes evolved across distinct phases. The first is the *pre-escalation* period, which spans January 2018 to September 2022 and serves as our baseline. The second is the *escalation* period from October 2022 through July 2023, when pursuits surged. Third is the *post-Maddrey* phase, which begins with Chief of Department Jeffrey Maddrey's compliance memo in August 2023 and runs through January 2025. Finally, the *post-Tisch* phase begins with Commissioner Tisch's formal policy rewrite in February 2025 and runs through the end of our study period (December 2025).
+
+### Generalized Synthetic Control
+
+We apply the generalized synthetic control method (gsynth; @xu2017gsc) to a panel of large U.S. cities [@sharkey2026american] to provide a national comparison for the shootings outcome. Unlike two-way fixed effects (TWFE) difference-in-differences, gsynth estimates an interactive fixed effects model that explicitly allows latent factors to load differently across units, accommodating the heterogeneous time trends that invalidated simpler national comparison designs for these data. NYC is the single treated unit; the donor pool excludes 24 cities with documented pursuit policy changes between 2018 and 2024 to avoid violations of the Stable Unit Treatment Value Assumption (SUTVA; see Appendix C for the full exclusion list). The number of latent factors is selected by leave-one-out cross-validation. Inference uses 500 parametric bootstrap iterations. As a robustness check, we replicate the analysis with the full top-50-by-population donor panel (including cities with documented pursuit policy changes), which provides a conservative upper bound on the treatment estimate given the potential SUTVA contamination.
+
+```{=latex}
+\clearpage
+```
+
+# Results
+
+## Pursuit Activity
+
+Monthly pursuit events increased sharply following the department's enforcement posture shift in late 2022. In the pre-escalation period (January 2018–September 2022), the NYPD averaged `r table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_pursuits)` pursuit events per month. Pursuit volume rose to a mean of `r table7 |> filter(grepl("Escalation", regime)) |> pull(mean_pursuits)` during the initial escalation phase (October 2022–July 2023) and continued climbing to `r table7 |> filter(grepl("Post-Maddrey", regime)) |> pull(mean_pursuits)` per month during the Post-Maddrey period (August 2023–January 2025), as the August 2023 compliance memo reinforced existing procedures without restricting eligible offenses. Annually, pursuit events totaled `r comma(table1 |> filter(year == 2023) |> pull(pursuits))` in 2023 and `r comma(table1 |> filter(year == 2024) |> pull(pursuits))` in 2024, compared with `r comma(table1 |> filter(year == 2022) |> pull(pursuits))` in 2022 (Table 1). The ITS model estimates an immediate level shift of *b*₂ = `r round(its_nw |> filter(term=="post", outcome=="Pursuits") |> pull(estimate), 1)` events per month (SE = `r round(its_nw |> filter(term=="post", outcome=="Pursuits") |> pull(std.error), 1)`, *p* `r fmt_p_stmt(its_nw |> filter(term=="post", outcome=="Pursuits") |> pull(p.value))`).
+
+The February 2025 restriction reversed the escalation. Monthly pursuits fell from a pre-Tisch mean of `r table9 |> filter(outcome=="Pursuits") |> pull(pre_tisch_fmt)` to `r table9 |> filter(outcome=="Pursuits") |> pull(post_tisch_fmt)` (`r table9 |> filter(outcome=="Pursuits") |> pull(pct_change_fmt)`), consistent with the department's disclosure that approximately two-thirds of 2024 pursuits — most initiated from traffic stops from which drivers fled — would not qualify under the new felony-and-violent-misdemeanor threshold. Figure 1 illustrates pursuit volume across all four policy regimes.
+
+```{r fig-regimes}
+#| label: fig-regimes
+#| fig-cap: "Monthly NYPD pursuit broadcasts across four policy regimes: Pre-escalation (January 2018–September 2022), Escalation (October 2022–July 2023), Post-Maddrey (August 2023–January 2025), and Post-Tisch (February 2025–December 2025). Vertical dashed lines indicate intervention dates."
+#| out-width: "100%"
+
+knitr::include_graphics(here("output", "plots", "event_regime_pursuit_events.png"))
+```
+
+Table 1 provides annual totals for each outcome across the full study period, offering a pre/post summary of how the key indicators changed alongside the pursuit escalation.
+
+```{r table1}
+#| label: tbl-annual
+#| tbl-cap: "Annual Summary of Key Outcomes, 2018–2025"
+
+table1 |>
+  mutate(
+    year = as.integer(year),
+    pursuit_pct = case_when(
+      is.na(pursuit_pct) ~ "—",
+      pursuit_pct > 0 ~ paste0("+", round(pursuit_pct, 1), "%"),
+      TRUE ~ paste0(round(pursuit_pct, 1), "%")
+    ),
+    collision_pct = case_when(
+      is.na(collision_pct) ~ "—",
+      collision_pct > 0 ~ paste0("+", round(collision_pct, 1), "%"),
+      TRUE ~ paste0(round(collision_pct, 1), "%")
+    ),
+    robbery_pct = case_when(
+      is.na(robbery_pct) ~ "—",
+      robbery_pct > 0 ~ paste0("+", round(robbery_pct, 1), "%"),
+      TRUE ~ paste0(round(robbery_pct, 1), "%")
+    ),
+    shooting_pct = case_when(
+      is.na(shooting_pct) ~ "—",
+      shooting_pct > 0 ~ paste0("+", round(shooting_pct, 1), "%"),
+      TRUE ~ paste0(round(shooting_pct, 1), "%")
+    ),
+    gun_violence_pct = case_when(
+      is.na(gun_violence_pct) ~ "—",
+      gun_violence_pct > 0 ~ paste0("+", round(gun_violence_pct, 1), "%"),
+      TRUE ~ paste0(round(gun_violence_pct, 1), "%")
+    )
+  ) |>
+  select(
+    Year           = year,
+    Pursuits       = pursuits,      `Δ Pursuits`      = pursuit_pct,
+    Crashes        = collisions,    `Δ Crashes`       = collision_pct,
+    Robberies      = robberies,     `Δ Robberies`     = robbery_pct,
+    Shootings      = shootings,     `Δ Shootings`     = shooting_pct,
+    `Gun Violence` = gun_violence,  `Δ Gun Violence`  = gun_violence_pct
+  ) |>
+  flextable() |>
+  set_table_properties(layout = "autofit", width = 1) |>
+  autofit()
+```
+
+## Pursuit-Related Collisions
+
+Pursuit-related collisions increased substantially following the escalation, representing the most direct and causally interpretable impact of the policy change (see Table 2). The ITS model estimates an immediate level shift of *b*₂ = `r round(its_nw |> filter(term=="post", outcome=="Collisions") |> pull(estimate), 1)` additional collisions per month (SE = `r round(its_nw |> filter(term=="post", outcome=="Collisions") |> pull(std.error), 2)`, *p* `r fmt_p_stmt(its_nw |> filter(term=="post", outcome=="Collisions") |> pull(p.value))`), with no significant change in the post-intervention slope (*p* `r fmt_p_stmt(its_nw |> filter(term=="t_since", outcome=="Collisions") |> pull(p.value))`). Prior to the escalation, the NYPD averaged `r table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_crashes)` pursuit-related collisions per month; this rose to `r table7 |> filter(grepl("Post-Maddrey", regime)) |> pull(mean_crashes)` per month during the post-Maddrey period, a more than fivefold increase in total crash burden. Although the per-pursuit crash rate fell from `r table7 |> filter(grepl("Pre-escalation", regime)) |> pull(crash_rate)` to approximately `r table7 |> filter(grepl("Post-Maddrey", regime)) |> pull(crash_rate)` as lower-risk pursuits were added, the absolute collision toll increased substantially given the scale of the volume increase. The pre-escalation per-pursuit crash rate may also partly reflect administrative underreporting in earlier periods when pursuit tracking was less systematic, which would make the observed decline appear steeper than the underlying behavioral shift.
+
+The per-pursuit rate decline reflects a compositional shift, not reduced harm. Pre-escalation pursuits were heavily selected — only situations serious enough to overcome institutional norms — and consequently ended in collisions at an elevated rate. As volume expanded after October 2022, the marginal pursuit increasingly involved lower-risk situations: fled traffic stops, ATV operators, vehicles with illegal plates. These added pursuits carry lower per-event crash probability, pulling the average rate down. The policy question turns on aggregate harm: a rate of `r table7 |> filter(grepl("Post-Maddrey", regime)) |> pull(crash_rate)` applied to approximately `r comma(round(table7 |> filter(grepl("Post-Maddrey", regime)) |> mutate(total = mean_pursuits * months) |> pull(total)))` Post-Maddrey pursuits generates far more collisions than `r table7 |> filter(grepl("Pre-escalation", regime)) |> pull(crash_rate)` applied to approximately `r round(table7 |> filter(grepl("Pre-escalation", regime)) |> mutate(total = mean_pursuits * months) |> pull(total))` pre-escalation pursuits.
+
+The multi-period event study corroborates this pattern closely. Collision counts trended upward throughout the escalation phase (*b* = `r round(table8 |> filter(outcome=="Collisions", term=="t_since_escalation") |> pull(estimate), 2)` per month, *p* `r fmt_p_stmt(table8 |> filter(outcome=="Collisions", term=="t_since_escalation") |> pull(p.value))`), jumped at the start of the Post-Maddrey period (*b* = `r round(table8 |> filter(outcome=="Collisions", term=="post_maddrey") |> pull(estimate), 1)`, *p* `r fmt_p_stmt(table8 |> filter(outcome=="Collisions", term=="post_maddrey") |> pull(p.value))`), and declined sharply following the February 2025 restriction (*b* = `r round(table8 |> filter(outcome=="Collisions", term=="post_tisch") |> pull(estimate), 1)`, *p* `r fmt_p_stmt(table8 |> filter(outcome=="Collisions", term=="post_tisch") |> pull(p.value))`). This close correspondence across all four policy regimes is consistent with a direct causal mechanism.
+
+## Crime Outcomes
+
+We next examine whether the escalation reduced crime. The city, borough, precinct, and national analyses provide no consistent evidence of deterrence.
+
+### City-Level Interrupted Time Series
+
+Within-NYC crime trends changed substantially after October 2022: during the pre-intervention window, shooting incidents were trending upward at *b*₁ = `r round(its_nw |> filter(term=="t", outcome=="Shootings") |> pull(estimate), 2)` incidents per month (*p* `r fmt_p_stmt(its_nw |> filter(term=="t", outcome=="Shootings") |> pull(p.value))`); the counterfactual projection continues this upward trajectory, so the post-intervention estimates reflect deviations from an already-rising baseline. Shooting incidents declined relative to this counterfactual: the ITS estimates an immediate level shift of *b*₂ = `r round(its_nw |> filter(term=="post", outcome=="Shootings") |> pull(estimate), 1)` incidents per month (SE = `r round(its_nw |> filter(term=="post", outcome=="Shootings") |> pull(std.error), 2)`, *p* `r fmt_p_stmt(its_nw |> filter(term=="post", outcome=="Shootings") |> pull(p.value))`), with the post-intervention trend shifting further downward relative to the pre-intervention trend (*b*₃ = `r round(its_nw |> filter(term=="t_since", outcome=="Shootings") |> pull(estimate), 2)` per month, *p* `r fmt_p_stmt(its_nw |> filter(term=="t_since", outcome=="Shootings") |> pull(p.value))`). Aggregate gun violence (shootings plus shots-fired reports) declined similarly — an immediate level shift of *b*₂ = `r round(its_nw |> filter(term=="post", outcome=="Gun Violence") |> pull(estimate), 1)` (*p* `r fmt_p_stmt(its_nw |> filter(term=="post", outcome=="Gun Violence") |> pull(p.value))`) and a comparable downward shift in the post-intervention trend (*b*₃ = `r round(its_nw |> filter(term=="t_since", outcome=="Gun Violence") |> pull(estimate), 1)` per month, *p* `r fmt_p_stmt(its_nw |> filter(term=="t_since", outcome=="Gun Violence") |> pull(p.value))`).
+
+```{r table2a}
+#| label: tbl-its
+#| tbl-cap: "Interrupted Time Series Estimates (Newey-West HAC Standard Errors, Lag = 6)"
+
+pre_means_tbl <- tibble(
+  Outcome  = c("Pursuits", "Collisions", "Robberies", "Shootings", "Gun Violence"),
+  pre_mean = c(
+    table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_pursuits),
+    table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_crashes),
+    table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_robberies),
+    table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_shootings),
+    table7 |> filter(grepl("Pre-escalation", regime)) |> pull(mean_gun_events)
+  )
+)
+
+its_pct <- its_nw |>
+  filter(term %in% c("post", "t_since")) |>
+  mutate(Term = if_else(term == "post", "Level shift", "Slope change"),
+         Outcome = outcome) |>
+  left_join(pre_means_tbl, by = "Outcome") |>
+  mutate(`% of Baseline` = paste0(
+    if_else(estimate / pre_mean * 100 >= 0, "+", ""),
+    round(estimate / pre_mean * 100, 1), "%"
+  )) |>
+  select(Outcome, Term, `% of Baseline`)
+
+table2a |>
+  rename(
+    Outcome       = outcome,
+    Term          = term,
+    Estimate      = estimate_fmt,
+    `95% CI`      = ci,
+    `p-value`     = p.value
+  ) |>
+  mutate(`p-value` = gsub("0\\.", ".", format.pval(`p-value`, digits = 3, eps = .001))) |>
+  left_join(its_pct, by = c("Outcome", "Term")) |>
+  select(Outcome, Term, Estimate, `% of Baseline`, `95% CI`, `p-value`) |>
+  flextable() |>
+  footnote(j = "% of Baseline", part = "header",
+           value = as_paragraph(
+             "Estimate as a percentage of the pre-escalation monthly mean for that outcome. "),
+           ref_symbols = "a") |>
+  set_table_properties(layout = "autofit", width = 1) |>
+  autofit()
+```
+
+Robbery showed no immediate change (*b*₂ = `r round(its_nw |> filter(term=="post", outcome=="Robberies") |> pull(estimate), 1)`, *p* `r fmt_p_stmt(its_nw |> filter(term=="post", outcome=="Robberies") |> pull(p.value))`), but the post-intervention trend shifted sharply downward relative to the pre-intervention trend (*b*₃ = `r round(its_nw |> filter(term=="t_since", outcome=="Robberies") |> pull(estimate), 1)` per month, *p* `r fmt_p_stmt(its_nw |> filter(term=="t_since", outcome=="Robberies") |> pull(p.value))`), indicating a gradual trajectory shift. The 2022 pre-intervention robbery trend itself reflected post-COVID crime normalization following NYC's 2021 shooting peak and was not uniform across the city, which shapes the pre-period baseline against which the ITS projects forward. Intervention date sensitivity analyses confirm that the key estimates are robust to shifting the treatment date by ±2 months. Pre-period placebo tests (within-NYC temporal placebos) produce no comparable signals, ruling out spurious detection within the analysis window; these tests do not, however, rule out national crime trend confounding. Three concurrent confounders are most plausible: the April 2023 New York State (NYS) bail reform amendments that restored pretrial detention authority for certain offenses, post-COVID crime normalization following NYC's 2021 shooting peak, and NYPD strategy shifts across the Sewell, Maddrey, and Tisch commissionerships. The ITS crime estimates should therefore be read as an upper bound on potential deterrence benefits rather than causal effect estimates; the generalized synthetic control analysis (National Comparison section below) provides the most direct test of whether the ITS crime decline outpaced national trends, and it does not. Figure 2 displays the segmented regression fits for all four outcomes.
+
+```{r fig-its}
+#| label: fig-its
+#| fig-cap: "Interrupted time series segmented regression fits for four outcomes, January 2018–December 2025. Top row: pursuit-related collisions (left) and shooting incidents (right). Bottom row: aggregate gun violence — shootings plus shots-fired (left) and robberies (right). Shaded bands show the estimated post-intervention effect (fitted minus counterfactual). Vertical dashed lines mark the October 2022 intervention. Newey-West HAC standard errors (lag = 6). Points show monthly observed counts."
+#| out-width: "100%"
+
+img1 <- image_trim(image_read(here("output", "plots", "ITS_Pursuit_Collisions.png")))
+img2 <- image_trim(image_read(here("output", "plots", "ITS_Shooting_Incidents.png")))
+img3 <- image_trim(image_read(here("output", "plots", "ITS_Gun_Violence_(Shootings_+_Shots_Fired).png")))
+img4 <- image_trim(image_read(here("output", "plots", "ITS_Robberies.png")))
+target_w <- min(image_info(img1)$width, image_info(img2)$width,
+                image_info(img3)$width, image_info(img4)$width)
+row1 <- image_append(c(image_scale(img1, target_w), image_scale(img2, target_w)))
+row2 <- image_append(c(image_scale(img3, target_w), image_scale(img4, target_w)))
+image_append(c(row1, row2), stack = TRUE)
+```
+
+### Borough-Level Interrupted Time Series
+
+Estimating the ITS model separately for each of the five NYC boroughs reveals substantial heterogeneity in crime responses. For shooting incidents, all five boroughs show negative level shifts (*b*₂) at October 2022, but the magnitude varies considerably. The Bronx, which experienced the highest post-escalation pursuit volume relative to baseline (approximately a `r round(its_boro_intensity |> filter(boro=="Bronx") |> pull(ratio))`-fold increase), shows the largest immediate reduction (*b*₂ = `r round(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Bronx") |> pull(b2), 1)`, SE = `r round(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Bronx") |> pull(b2_nw_se), 1)`, *p* `r fmt_p_stmt(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Bronx") |> pull(b2_p))`), while Staten Island, with the lowest absolute post-escalation pursuit volume, shows a near-zero and non-significant reduction (*b*₂ = `r round(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Staten Island") |> pull(b2), 1)`, SE = `r round(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Staten Island") |> pull(b2_nw_se), 1)`, *p* `r fmt_p_stmt(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Staten Island") |> pull(b2_p))`). However, the relationship between pursuit intensity and crime reduction is not monotonically ordered: Queens recorded the highest raw pursuit volume in the post-escalation period yet achieved a shooting reduction (*b*₂ = `r round(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Queens") |> pull(b2), 1)`, *p* `r fmt_p_stmt(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Queens") |> pull(b2_p))`) comparable to Manhattan (*b*₂ = `r round(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Manhattan") |> pull(b2), 1)`, *p* `r fmt_p_stmt(its_boro_coef |> filter(outcome=="Shooting Incidents", boro=="Manhattan") |> pull(b2_p))`), despite Manhattan having roughly one-third the pursuit activity. The slope-change coefficient (*b*₃) is negative for all five boroughs for shooting incidents, reflecting a sustained post-intervention decline.
+
+For robbery, the pattern is more heterogeneous and does not track pursuit intensity: Manhattan shows the largest negative level shift (*b*₂ = `r round(its_boro_coef |> filter(outcome=="Robbery", boro=="Manhattan") |> pull(b2), 0)`, SE = `r round(its_boro_coef |> filter(outcome=="Robbery", boro=="Manhattan") |> pull(b2_nw_se), 1)`, *p* `r fmt_p_stmt(its_boro_coef |> filter(outcome=="Robbery", boro=="Manhattan") |> pull(b2_p))`) despite moderate pursuit activity, while Staten Island — the lowest-pursuit borough — registers a statistically significant *positive* level shift (*b*₂ = `r round(its_boro_coef |> filter(outcome=="Robbery", boro=="Staten Island") |> pull(b2), 1)`, SE = `r round(its_boro_coef |> filter(outcome=="Robbery", boro=="Staten Island") |> pull(b2_nw_se), 1)`, *p* `r fmt_p_stmt(its_boro_coef |> filter(outcome=="Robbery", boro=="Staten Island") |> pull(b2_p))`). Neither the level-shift pattern nor the slope-change pattern for robbery is consistent with a deterrence mechanism operating through borough-level pursuit intensity.^[As a sensitivity check, we also estimated a conventional synthetic control model separately for each borough's robbery rate against a national donor pool; results (Appendix C, Table C2) show the same absence of a dose-response pattern with pursuit intensity found here.]
+
+Figure 3 displays the borough-level ITS fits for all four outcomes across all five boroughs. The five-by-four grid (rows = boroughs, columns = outcomes) reports the immediate level-shift coefficient (*b*₂) and Newey-West *p*-value in each panel.
+
+```{r fig-borough-its}
+#| label: fig-borough-its
+#| fig-cap: "Borough-level interrupted time series fits for all four outcomes, January 2018–December 2025. Rows correspond to boroughs (Bronx, Brooklyn, Manhattan, Queens, Staten Island); columns correspond to outcomes (pursuit-related collisions, shooting incidents, gun violence, robbery). Each panel shows the observed monthly counts (points), segmented regression fit (solid line), counterfactual projection from the pre-intervention trend (dashed line), and shaded post-intervention effect band. Each panel's upper right corner reports the immediate level-shift estimate *b*₂ and its Newey-West *p*-value (lag = 6). Vertical dotted line marks October 2022."
+#| out-width: "100%"
+
+knitr::include_graphics(here("output", "plots", "fig_borough_its_combined.png"))
+```
+
+The borough results sharpen the contrast. Collisions track pursuit volume closely; crime reductions do not. If apprehension threat were the mechanism, the Bronx (~`r round(its_boro_intensity |> filter(boro=="Bronx") |> pull(ratio))`-fold pursuit increase) should show substantially larger reductions than Manhattan (~`r round(its_boro_intensity |> filter(boro=="Manhattan") |> pull(ratio))`-fold), but the gap in crime reductions does not match the gap in escalation. This motivates the precinct-level DiD, which tests the same question at finer resolution.
+
+### Precinct-Level Analysis
+
+The 77-precinct panel is the study's sharpest identification lens. Each outcome uses its own pre-treatment median to split precincts into high and low groups (Figure 4); the split is fixed in the pre-intervention window (January 2018–September 2022) and cannot be contaminated by post-treatment dynamics.
+
+```{r fig-precinct-map}
+#| label: fig-precinct-map
+#| fig-cap: "Pre-intervention groupings for the heterogeneous-effects DiD design across all four outcomes. Top row: pursuit-related collisions (left) and shooting incidents (right); bottom row: gun violence (left) and robberies (right). Dark color = high pre-treatment rate (above median); light gray = low pre-treatment rate. Each outcome uses its own outcome-specific grouping variable. The panel covers all 77 NYPD precincts (G = 77 clusters in the DiD model). The gun violence and shooting groupings assign the majority of precincts to the same category, reflecting the strong within-precinct correlation between shooting incidents and shots-fired reports."
+#| out-width: "100%"
+
+knitr::include_graphics(here("output", "plots", "fig_precinct_map.png"))
+```
+
+**Heterogeneous-Effects DiD Results.** To test whether crime declines were larger where we would expect greater pursuit exposure, we compare post-2022 crime trajectories across precincts defined by their pre-intervention baseline crime rate. If pursuit escalation deters crime, precincts that already had more crime (and presumably saw more pursuits after October 2022) should show larger crime declines relative to lower-crime precincts. The DiD scalar estimate captures this difference: the post-October 2022 change in crime in higher-crime precincts relative to lower-crime precincts, net of all precinct-level baselines and citywide monthly shocks. For shooting incidents, the DiD estimate is *b* = `r round(pct_ddd |> filter(outcome=="shooting_incidents") |> pull(estimate), 3)` (SE = `r round(pct_ddd |> filter(outcome=="shooting_incidents") |> pull(std_error), 3)`, *p* `r fmt_p_stmt(pct_ddd |> filter(outcome=="shooting_incidents") |> pull(p_value))`), indicating that high-crime precincts experienced nominally larger shooting reductions than low-crime precincts in the post-intervention period. For robbery, the DiD estimate is *b* = `r round(pct_ddd |> filter(outcome=="robbery_count") |> pull(estimate), 2)` (SE = `r round(pct_ddd |> filter(outcome=="robbery_count") |> pull(std_error), 2)`, *p* `r fmt_p_stmt(pct_ddd |> filter(outcome=="robbery_count") |> pull(p_value))`), a positive and statistically significant result directly inconsistent with deterrence. Notably, even if high-crime precincts were experiencing faster secular crime declines than low-crime precincts (the most plausible confound, given post-pandemic mean-reversion), this would bias the DiD coefficient *downward* (toward more negative values) and the robbery coefficient *downward* (toward zero or negative values). The fact that the robbery DiD estimate is positive and significant despite this expected bias direction makes it especially difficult to explain as a measurement artifact; it is the opposite direction from what deterrence theory predicts. 
+
+The quartile dose-response specifications confirm these patterns: each one-quartile step up in pre-treatment shooting rate is associated with *b* = `r round(pct_ddd_all |> filter(outcome=="shooting_incidents", spec=="quartile_linear") |> pull(estimate), 3)` additional shooting reduction per month (*p* `r fmt_p_stmt(pct_ddd_all |> filter(outcome=="shooting_incidents", spec=="quartile_linear") |> pull(p_value))`), while each robbery-quartile step is associated with *b* = `r round(pct_ddd_all |> filter(outcome=="robbery_count", spec=="quartile_linear") |> pull(estimate), 2)` additional robberies per month (*p* `r fmt_p_stmt(pct_ddd_all |> filter(outcome=="robbery_count", spec=="quartile_linear") |> pull(p_value))`). For collisions, the highest-crash-quartile precincts show a positive and significant post-intervention DiD (*b* = `r round(pct_ddd_all |> filter(outcome=="collision_count", spec=="quartile_pergroup", grepl("::4:post", term)) |> pull(estimate), 3)`, *p* `r fmt_p_stmt(pct_ddd_all |> filter(outcome=="collision_count", spec=="quartile_pergroup", grepl("::4:post", term)) |> pull(p_value))`), consistent with the expected mechanism: precincts that already had higher collision rates saw the largest absolute increases as pursuit volume expanded department-wide. This collision quartile gradient reflects higher pursuit activity in precincts that had already demonstrated higher crash risk under prior pursuit procedures. The positive robbery DiD estimate should be read alongside the citywide ITS slope: the ITS captures a genuine NYC-wide robbery decline, but this design shows the decline was not concentrated in higher-crime precincts as a deterrence mechanism would predict. If anything, the cross-precinct gradient ran the wrong way.
+
+The event study plots (Figure 5) trace the quarterly DiD coefficients, the evolving difference between high- and low-crime precincts relative to the quarter before intervention (bin $-1$ = July–September 2022), for all four outcomes. Pre-period coefficients reveal that the parallel trends assumption is not satisfied for shooting incidents or robbery. A joint Wald F-test on all pre-treatment lead coefficients rejects the null of parallel trends for shooting incidents (`r if (!is.null(wald_pre)) paste0("$F$(", wald_pre |> filter(outcome=="Shooting incidents") |> pull(df), ", 76) = ", round(wald_pre |> filter(outcome=="Shooting incidents") |> pull(chi2), 2), ", $p$ ", fmt_p_stmt(wald_pre |> filter(outcome=="Shooting incidents") |> pull(p_joint))) else paste0(round(mean(pct_ddd_es_shoot |> filter(time_bin < -1) |> mutate(sig = conf_low > 0 | conf_high < 0) |> pull(sig)) * 100, 0), "% of pre-period coefficients statistically distinguishable from zero")`) and robbery (`r if (!is.null(wald_pre)) paste0("$F$(", wald_pre |> filter(outcome=="Robbery") |> pull(df), ", 76) = ", round(wald_pre |> filter(outcome=="Robbery") |> pull(chi2), 2), ", $p$ ", fmt_p_stmt(wald_pre |> filter(outcome=="Robbery") |> pull(p_joint))) else paste0(round(mean(pct_ddd_es_rob |> filter(time_bin < -1) |> mutate(sig = conf_low > 0 | conf_high < 0) |> pull(sig)) * 100, 0), "% of pre-period coefficients statistically distinguishable from zero")`). Pre-period divergence for gun violence follows a pattern similar to shootings, reflecting the strong correlation between the two outcomes at the precinct level. For pursuit crashes, the pre-period coefficients are generally flat, and the same joint Wald F-test fails to reject parallel trends (`r if (!is.null(wald_pre)) paste0("$F$(", wald_pre |> filter(outcome=="Pursuit crashes") |> pull(df), ", 76) = ", round(wald_pre |> filter(outcome=="Pursuit crashes") |> pull(chi2), 2), ", $p$ ", fmt_p_stmt(wald_pre |> filter(outcome=="Pursuit crashes") |> pull(p_joint))) else "F(7, 76) = 1.33, p = .248"`), consistent with parallel trends between high- and low-crash precincts before October 2022 and with the collision ITS being the better-identified result. This pre-period divergence, evident before any pursuit policy change for crime outcomes, indicates that high- and low-crime precincts were already on non-parallel trajectories, most likely reflecting differential rates of secular crime decline. The DiD crime estimates therefore cannot be given a causal interpretation under the standard parallel trends assumption.
+
+The nominally negative shooting DiD estimate more plausibly reflects faster mean-reversion in the post-pandemic crime cycle among high-crime precincts than a deterrence effect of pursuit escalation [@mccrain2026regression]. For both crime outcomes, the pre-period divergence runs in the same direction as a deterrence prediction would, making the nominally negative shooting DiD estimate uninformative as evidence for deterrence. The robbery DiD estimate is positive and significant despite this, which runs in the opposite direction from deterrence regardless of the parallel trends issue.
+
+```{r fig-pct-ddd}
+#| label: fig-pct-ddd
+#| fig-cap: "Precinct-level heterogeneous-effects DiD event study, all four outcomes. Top row: shooting incidents (left) and gun violence (right); bottom row: robbery (left) and pursuit-related collisions (right). X-axis shows three-month (quarterly) bins relative to the October 2022 policy change; bin −1 (July–September 2022) is the reference quarter. Points show the estimated DiD coefficient for each quarterly bin. The Maddrey compliance memo falls in bin 3 (July–September 2023); bin 9 covers January 2025 onward; the Tisch policy rewrite officially took effect in February 2025 but is included in this lump bin as she announced it in mid-January. Pre-period coefficients reveal non-parallel trends for crime outcomes before the intervention, undermining the parallel trends assumption required for causal interpretation; collision pre-period coefficients are consistent with parallel trends. Standard errors clustered by precinct (G = 77). Note for the pursuit-related collisions panel: high-crash precincts are expected to exhibit larger collision increases after the policy change (reflecting higher pursuit activity), not crime reductions; the directional prediction for collisions differs from the crime outcome panels."
+#| out-width: "100%"
+
+img_ddd_s  <- image_trim(image_read(here("output", "plots", "fig_precinct_ddd_shooting.png")))
+img_ddd_gv <- image_trim(image_read(here("output", "plots", "fig_precinct_ddd_gun_violence.png")))
+img_ddd_r  <- image_trim(image_read(here("output", "plots", "fig_precinct_ddd_robbery.png")))
+img_ddd_c  <- image_trim(image_read(here("output", "plots", "fig_precinct_ddd_crashes.png")))
+target_w <- min(image_info(img_ddd_s)$width,  image_info(img_ddd_gv)$width,
+                image_info(img_ddd_r)$width,  image_info(img_ddd_c)$width)
+row1 <- image_append(c(image_scale(img_ddd_s,  target_w), image_scale(img_ddd_gv, target_w)))
+row2 <- image_append(c(image_scale(img_ddd_r,  target_w), image_scale(img_ddd_c,  target_w)))
+image_append(c(row1, row2), stack = TRUE)
+```
+
+### National Comparison: Generalized Synthetic Control
+
+The three within-NYC designs are each limited by the absence of a credible control city. The generalized synthetic control addresses this directly by constructing a weighted composite of large U.S. cities to serve as NYC's counterfactual shooting trajectory. The outcome is the annualized shooting rate per 100,000 population from Gun Violence Archive data, observed monthly from January 2014 through December 2025. NYC is the single treated unit; all other cities serve as the donor pool.
+
+**Design.** Leave-one-out cross-validation over $r = 0$–5 latent factors selects the optimal specification; inference uses 500 parametric bootstrap iterations. The covariance matrix was singular in the F-test, which is expected with a single treated unit and does not affect point estimates or bootstrap confidence intervals [@xu2017gsc]. To avoid SUTVA contamination — which would occur if donor cities' shooting trends were themselves affected by their own pursuit policy changes — we exclude 24 cities with documented city-level or binding state-level pursuit policy changes between 2018 and 2024 (Appendix C). The resulting SUTVA-clean donor pool comprises `r gsynth_clean$n_donors` cities with stable pursuit policies, observed across `r gsynth_clean$n_months` months. As a robustness check, we replicate the analysis with the full top-50-by-population panel (`r gsynth_full$n_donors` donors).
+
+**Results.** The SUTVA-clean panel selects $r = `r gsynth_clean$n_factors`$ latent factors, with a pre-treatment root mean squared prediction error (RMSPE) of `r round(gsynth_clean$pre_rmspe, 2)` indicating adequate counterfactual fit. The estimated average treatment effect on the treated (ATT) is `r round(gsynth_clean$att, 2)` shooting incidents per 100,000 (annualized), and none of the `r gsynth_clean$n_post` post-treatment months reaches statistical significance at the 95% level. Figure 6 plots NYC's actual shooting rate against the gsynth counterfactual, and Figure 7 shows the period-by-period ATT gap; the 95% bootstrap confidence interval includes zero throughout the post-treatment window. A full-panel robustness check ($r = `r gsynth_full$n_factors`$, `r gsynth_full$n_donors` donors) yields a similarly null ATT of `r round(gsynth_full$att, 2)` per 100,000. Both specifications point to the same conclusion: NYC's post-October 2022 shooting trajectory is statistically indistinguishable from what the latent-factor model predicts based on national trends.
+
+Following the recommendation of @abadie2015comparative for comparative synthetic-control studies, inference about the presence of an effect rests primarily on placebo-in-space permutation tests rather than the model-based bootstrap interval reported above. We re-estimate the SUTVA-clean gsynth model with each donor city treated in turn as the pseudo-treated unit, then rank NYC's own average post-treatment ATT and its pre/post mean-squared-prediction-error (MSPE) ratio against this donor-city distribution, alongside NYC's own value. NYC's ATT ranks `r gsynth_perm_att$rank` of `r gsynth_perm_att$n_valid` cities (two-sided permutation *p* `r fmt_p_stmt(gsynth_perm_att$p_value)`), and its MSPE ratio ranks `r gsynth_perm_mspe$rank` of `r gsynth_perm_mspe$n_valid` (one-sided permutation *p* `r fmt_p_stmt(gsynth_perm_mspe$p_value)`) — both squarely within the distribution expected if NYC's shooting trajectory were no different from an arbitrary donor city's. The permutation test corroborates the bootstrap-based null result without relying on the bootstrap's distributional assumptions.
+
+```{r fig-gsynth-cf}
+#| label: fig-gsynth-cf
+#| fig-cap: !expr 'paste0("NYC actual shooting rate versus gsynth counterfactual, January 2014–December 2025. Solid line: NYC observed annualized rate per 100,000. Dashed line: gsynth counterfactual constructed from ", gsynth_clean$n_donors, " SUTVA-clean donor cities. Vertical dotted line marks the October 2022 pursuit escalation.")'
+#| out-width: "100%"
+
+knitr::include_graphics(here("output", "gsynth_results", "gsynth_actual_vs_cf.png"))
+```
+
+```{r fig-gsynth-att}
+#| label: fig-gsynth-att
+#| fig-cap: !expr 'paste0("Period-by-period average treatment effect on the treated (ATT) with 95% parametric bootstrap confidence intervals, October 2022–December 2025. The zero line falls within the confidence interval for all ", gsynth_clean$n_post, " post-treatment months, indicating no significant treatment effect in any month.")'
+#| out-width: "100%"
+
+knitr::include_graphics(here("output", "gsynth_results", "gsynth_att_gap.png"))
+```
+
+## Re-restriction: The Reverse Experiment
+
+The February 2025 restriction provides the paper's strongest internal test of deterrence. It sharply reduced pursuits within the same department and well after the initial escalation, allowing crime trends before and after the change to be compared without relying on another jurisdiction. We estimate the post-Tisch effects using a multi-period segmented regression model that extends the city-level ITS specification to accommodate four distinct slope regimes, with the Tisch indicator entering as both a level shift and a slope change from February 2025 onward. The February restriction was publicly announced [@nypd2025tisch], strengthening this falsification: a public reversal should cause deterrent effects to decay faster than a change communicated only through observed behavior — making any resulting crime upturn more detectable. The four-regime event study reveals heterogeneous trajectories. For collisions, the pattern tracks pursuit volume across all phases (as described above). For crime outcomes, the most informative comparison is the Tisch reversal: if pursuit escalation deters crime through credible apprehension threat, then the re-restriction that reduced monthly pursuits by `r sub("^-", "", table9 |> filter(outcome=="Pursuits") |> pull(pct_change_fmt))` should produce a corresponding crime increase.
+
+```{r table7}
+#| label: tbl-regimes
+#| tbl-cap: "Mean Monthly Outcomes by Policy Regime"
+
+table7 |>
+  select(
+    Regime        = regime,
+    Months        = months,
+    Pursuits      = mean_pursuits,
+    Crashes       = mean_crashes,
+    `Crash Rate`  = crash_rate,
+    Robberies     = mean_robberies,
+    Shootings     = mean_shootings
+  ) |>
+  flextable() |>
+  footnote(j = 5, value = as_paragraph("Pursuit-related crashes as a percentage of pursuit events."),
+           ref_symbols = "a", part = "header") |>
+  set_table_properties(layout = "autofit", width = 1) |>
+  autofit()
+```
+
+The February 2025 restriction did not increase crime (see Table 3). Following the February 2025 restriction, robberies declined by `r sub("^-", "", table9 |> filter(outcome=="Robberies") |> pull(pct_change_fmt))` from their pre-Tisch mean — the opposite direction from what a deterrence model predicts. Shooting incidents fell by `r sub("^-", "", table9 |> filter(outcome=="Shootings") |> pull(pct_change_fmt))`, and aggregate gun violence declined by `r sub("^-", "", table9 |> filter(outcome=="Gun Violence") |> pull(pct_change_fmt))`. The multi-period model confirms that the post-Tisch shooting trajectory continued downward (*b* = `r round(table8 |> filter(outcome=="Shootings", term=="t_since_tisch") |> pull(estimate), 2)` per month, *p* `r fmt_p_stmt(table8 |> filter(outcome=="Shootings", term=="t_since_tisch") |> pull(p.value))`), while the post-Tisch level shift for shootings was not statistically distinguishable from zero (*b* = `r round(table8 |> filter(outcome=="Shootings", term=="post_tisch") |> pull(estimate), 1)`, *p* `r fmt_p_stmt(table8 |> filter(outcome=="Shootings", term=="post_tisch") |> pull(p.value))`).
+
+## Cost-Benefit Analysis
+
+The bottom line of the cost-benefit analysis (CBA) is straightforward: the collision costs are large enough that a meaningful share of the observed crime decline would need to be causally attributable to pursuit policy to produce a net societal benefit. We formalize this intuition through a partial CBA from a societal perspective — valuing all costs and benefits regardless of who bears them (see Table 4). The analysis is best understood as a sensitivity exercise that quantifies the minimum causal attribution share required for benefits to exceed costs, not as a claim that observed crime reductions equal the pursuit-deterrence benefit.
+
+Costs comprise excess pursuit-related collision externalities, defined as crashes above the pre-escalation monthly baseline and summed over the post-escalation study period. We value these costs using Federal Highway Administration (FHWA) unit-cost schedules. Fatalities are estimated at 1.0% of pursuit-related crashes in the central scenario, with rates of 0.5% and 1.5% used as lower and upper bounds [@Hendrix2026; @kenney1997national; @rivara2004motor]. This 1.0% figure is conditioned on a pursuit-related collision having already occurred; it should not be conflated with the smaller per-pursuit fatality rates reported elsewhere in the pursuit literature (well below 1%, depending on study and era), which use the full universe of pursuits — most of which do not end in a collision at all — as the denominator. The two statistics answer different questions: one asks how often a collision that has already happened proves fatal, the other how often a pursuit, collision or not, ends in death. Each fatality is valued using a statistical life of $12.5 million (VSL), consistent with 2022 USDOT guidance [@usdot2022vsl]. Injuries are estimated to occur in 35% of crashes, with 1.5 injuries per injury crash, and are valued using a blended serious- and minor-injury unit cost [@alpert1988research; @kenney1997national]. Property damage is valued using the FHWA per-crash schedule.
+
+On the benefit side, we use the ITS-estimated shooting decline as an upper bound. Under full attribution ($\theta = 1$), the entire within-NYC decline is credited to pursuit escalation. Each prevented shooting is valued at $1.25 million, or 10% of the assumed VSL. We then define the attribution share, $\theta \in [0,1]$, as the fraction of the ITS-estimated shooting decline caused by pursuit escalation and calculate the break-even value, $\theta^*$, at which shooting-prevention benefits equal collision costs.
+
+Under the low scenario, which assumes a fatality rate of 0.5%, collision costs are smaller and a lower attribution share is required to break even. Under the high scenario, which assumes a fatality rate of 1.5%, collision costs are greater and the required attribution share rises.
+
+Pursuit-related collision costs are substantial and directly attributable to the policy change. Across the post-escalation period, the model estimates approximately `r table5 |> filter(component == "Excess pursuit crashes") |> pull(value)` excess pursuit-related collisions above the pre-escalation baseline, generating an estimated `r table5 |> filter(component == "Estimated fatalities (1.0% of crashes, central scenario)") |> pull(value)` additional fatalities and `r table5 |> filter(component == "Estimated injuries (35% of crashes, 1.5 per crash)") |> pull(value)` additional injuries. Valued at central VSL assumptions, total collision costs amount to `r dollar(round(table5b |> filter(scenario == "Central") |> pull(total_crash_cost)))`, comprising approximately `r table5 |> filter(component == "Fatality cost (at VSL)") |> pull(value)` in fatality costs, `r table5 |> filter(component == "Injury cost (blended serious/minor)") |> pull(value)` in injury costs, and `r table5 |> filter(component == "Property damage") |> pull(value)` in property damage. These estimates may be conservative: investigative reporting by @gonen2025nypd documented approximately 20 fatalities directly linked to NYPD pursuits over the study period (a figure higher than the actuarial estimate used here), suggesting that the central-scenario fatality cost is plausibly a lower bound.
+
+```{r table5b}
+#| label: tbl-cba
+#| tbl-cap: "Cost-Benefit Analysis: Collision Costs and Break-Even Attribution by Scenario"
+
+# Extract break-even value from table5 (already loaded in setup)
+be_shot <- table5 |> filter(component == "Shootings prevented needed to break even") |> pull(value)
+
+table5b |>
+  mutate(
+    total_crash_cost = dollar(round(total_crash_cost))
+  ) |>
+  select(scenario, total_crash_cost, breakeven_attribution_share) |>
+  rename(
+    Scenario                       = scenario,
+    `Crash Costs`                  = total_crash_cost,
+    `Break-Even Attribution (%)` = breakeven_attribution_share
+  ) |>
+  flextable() |>
+  compose(
+    j = "Break-Even Attribution (%)", part = "header",
+    value = as_paragraph("Break-Even Attribution (%)", as_sup("a"))
+  ) |>
+  add_footer_lines(paste0("a Break-Even Attribution (%) is the minimum fraction of the ITS-estimated crime decline (shootings and robbery combined) that must be causally attributable to the pursuit escalation for total crime benefits to equal total collision costs. ",
+                          "Values vary across scenarios because collision costs scale with VSL assumptions while full-attribution crime benefits are fixed. ",
+                          "Under the central scenario, this threshold corresponds to approximately ", be_shot, " prevented shootings over the study period.")) |>
+  bold(i = 1, part = "footer") |>
+  hline_top(part = "footer", border = officer::fp_border(width = 0.75)) |>
+  set_table_properties(layout = "autofit", width = 1) |>
+  autofit()
+```
+
+The break-even threshold is low in absolute terms (approximately `r round(as.numeric(be_shot))` prevented shootings over the study period, equivalent to a causal attribution share of approximately `r table5b |> filter(scenario == "Central") |> pull(breakeven_attribution_share)` of the ITS-estimated crime reduction under central VSL assumptions), yet the available evidence does not establish that even this minimal threshold is met through the causal mechanism of pursuit deterrence. Under full causal attribution (the theoretical upper bound), crime benefits would substantially exceed collision costs (central benefit-cost ratio [BCR]: `r round(table5b |> filter(scenario == "Central") |> pull(benefit_cost_ratio), 1)`:1), but this assumption is directly contradicted by the convergent evidence above. The generalized synthetic control analysis (National Comparison section above) is the most direct evidence on this question: NYC's post-2022 shooting trajectory is statistically indistinguishable from the synthetic counterfactual, which means the ITS crime decline tracks what the national trend predicted anyway, placing the likely causal attribution share near zero. The null result does not prove that deterrence is entirely absent; rather, it establishes that the crime reduction required to break even (approximately three to four prevented shootings per month) *should be detectable* given the data resolution available. The absence of a detectable signal at this threshold is informative.
+
+# Discussion
+
+The collision evidence is the study's clearest result. Collisions rose and fell with pursuit activity across all four policy regimes, supporting the direct mechanism through which more pursuits create more opportunities for crashes. Although the crash rate per pursuit declined as lower-risk incidents entered the mix, the increase in pursuit volume produced substantially greater aggregate harm.
+
+Several convergent findings cut against a deterrence interpretation. The precinct shooting estimate cannot be interpreted causally because the groups followed non-parallel pre-treatment trends, while the robbery estimate runs opposite to the predicted direction. More broadly, a national secular crime decline — documented across 40 large U.S. cities through 2025, including a 21% drop in homicide rates [@lopez2026crime] — dominated NYC's aggregate trajectory.
+
+Borough-level heterogeneity provides little additional support for deterrence. Crime reductions did not scale monotonically with pursuit intensity for either outcome, although borough-specific confounding prevents a strong causal inference from that pattern.
+
+The Tisch reversal provides independent evidence against a large, immediate deterrence effect. Crime did not rise after pursuits fell sharply, but the test is not immune to the national-trend confound affecting the city-level ITS. Continued secular decline could conceal a modest deterrence-decay effect, so the reversal rules out a large rebound more convincingly than a smaller one.
+
+The collision costs are substantial (approximately `r dollar(round(table5b |> filter(scenario == "Central") |> pull(total_crash_cost)))` under central assumptions) and directly attributable to the policy change. There is no comparable evidence of benefits. The break-even threshold (approximately `r round(as.numeric(be_shot))` prevented shootings over the study period) is low but unmet, and thus the available evidence is consistent with a causal share near zero.
+
+## Limitations
+
+The precinct DiD cannot support a causal estimate of crime effects because high- and low-crime precincts followed non-parallel pre-treatment trajectories. Pre-treatment grouping avoids classifying precincts by a post-treatment variable, but it does not solve this underlying identification failure. The design should therefore be read as a reduced-form comparison of group trajectories, not an estimate of the effect of pursuit counts.^[As a further check on this limitation, we regressed each outcome on precinct-month pursuit counts with precinct and month fixed effects, with standard errors clustered by precinct, and then added two increasingly demanding controls for area-level secular trends: precinct-specific linear time trends and precinct × year fixed effects. In the baseline specification, both shootings (*b* = −0.024, SE = 0.011, *p* = .03) and robbery (*b* = 0.330, SE = 0.139, *p* = .02) are significantly associated with pursuit counts. However, both attenuate with precinct-specific linear trends (shootings: *b* = −0.022, *p* = .03; robbery: *b* = 0.215, *p* = .02) and lose significance once the precinct × year fixed effects are added (shootings: *b* = −0.016, SE = 0.013, *p* = .25; robbery: *b* = 0.087, SE = 0.083, *p* = .30). Collisions remain positive and significant across all three specifications (baseline: *b* = 0.089, *p* < .001; linear trends: *b* = 0.081, *p* < .001; precinct × year FE: *b* = 0.055, *p* = .002). This pattern — crime associations that weaken and eventually disappear as area-level trend controls strengthen, alongside a collision association that does not — is consistent with our broader argument that the within-precinct crime evidence reflects confounded area-level trends rather than a causal pursuit effect. It does not, however, resolve the potential contemporaneous simultaneity problem: a same-month crime shock could still drive that month's pursuit count under any of these specifications, so a null result here rules out a robust association, not simultaneity itself.]
+
+A second and consequential limitation is that the pursuit escalation occurred simultaneously with a broader shift in NYPD enforcement posture under Mayor Adams's quality-of-life mandate. Vehicle pursuits were one visible element of a multi-pronged strategy that also encompassed changes in discretionary traffic-stop volume, field interview activity, and drug enforcement. If these concurrent enforcement changes also affected crime (and there is reason to believe they did, given the borough-level similarity in crime outcomes across widely differing pursuit volumes), then none of the crime analyses in this paper can cleanly isolate pursuit-specific effects. Data on NYPD stop-question-frisk activity and discretionary traffic-stop volume exist on NYC Open Data but are not included in the present analysis; incorporating such controls is a natural extension for future work. In their absence, all crime results, including the null findings, should be read as estimates of the combined effect of the 2022–2023 enforcement posture shift rather than as estimates of pursuit policy in isolation. The borough-level ITS assumes that heterogeneity in crime responses across boroughs reflects variation in pursuit intensity rather than other borough-specific factors; unmeasured borough characteristics (e.g., changes in community policing, socioeconomic shocks) could confound the within-NYC comparison. Borough-level pursuit counts also contain measurement error from cross-boundary pursuits, events that begin in one borough and conclude in another, which attenuates the precision of borough-specific exposure estimates. ITS sensitivity analyses confirm robustness to the intervention date within a ±2-month window, and temporal placebos yield no comparable signals. Finally, individual-level pursuit records linking specific pursuit outcomes to officer, suspect, and bystander characteristics are not publicly available, precluding finer-grained analysis of who bears the costs and who might reap the benefits of pursuit policy.
+
+The usual concerns about administrative data also apply. Our pursuit activity measure captures only incidents that officers broadcast over the radio, as required by Patrol Guide procedure. If officers engaged in vehicle pursuits without broadcasting during the study period, those events would be absent from our counts, making our estimates a conservative lower bound on true pursuit volume. If ghosted pursuits were more common in the pre-escalation period, when command attention to pursuits was lower, our pre-period counts would be underestimates, making the escalation appear larger than it was [@pfeiffer2020ghosted]. This measurement limitation is bounded in a way that matters for interpreting the collision findings specifically: an unreported pursuit is a different kind of event, not just an unlogged one. Patrol Guide procedure requires broadcasting precisely so that other units can converge on the pursuit; a broadcast pursuit is, by design, a multi-unit event, while an unreported pursuit typically remains a single officer trailing a fleeing vehicle. Because the collision mechanism documented above operates largely through the additional vehicles a broadcast draws into the pursuit, ghosted pursuits are not simply undercounted instances of the same risk — a single unit pursuing generates categorically less collision exposure than the five or six units a broadcast pursuit can attract. Their omission from our counts is therefore unlikely to understate the collision externality we attribute to broadcast pursuit volume, even though it does understate raw pursuit frequency. The Tisch falsification evidence, however, does not depend on counting pre-period pursuits and is therefore unaffected by this concern. We have no reason to believe that unreported pursuits would cluster systematically around the intervention dates in a way that would account for the dramatic swings we observe in the data.
+
+## Policy Implications
+
+The policy implications are asymmetric in the same direction as the evidence. Collision costs are demonstrably real; crime prevention benefits remain unclear. The break-even threshold is low enough in absolute terms (the equivalent of preventing roughly three to four shootings per month over the three-year study period) that a genuine deterrence effect, if it existed, should in principle be detectable. The DiD evidence and the Tisch falsification both point away from this. The causal attribution framework developed here offers a portable decision template: compute the break-even causal share under local cost and crime parameters, assess whether local crime trends outperform a credible national or regional benchmark, and treat within-jurisdiction declines as presumptively attributable to national trends absent that comparative evidence. The NYPD's experience, with its four distinct policy regimes and built-in falsification test, is unusually rich, but the framework applies wherever administrative data on pursuit activity and crime outcomes can be assembled. Jurisdictions considering expanding officers' discretion to engage in pursuits should require affirmative evidence of crime prevention benefits (at minimum, crime trajectories that outperform contemporaneous regional trends) rather than assuming them from within-jurisdiction time trends alone.
+
+The null crime findings carry implications for how departments should weigh pursuit authority against competing enforcement strategies. Hot-spots policing [@turchan2024effects] and focused deterrence [@kennedy2008deterrence] have accumulated systematic evidence of crime-reduction effects that, even at the lower end of estimated effect sizes, would exceed the break-even threshold estimated here. If the primary mechanism sought from expanded pursuit authority is deterrence of serious offending, the evidence base consistently favors strategies that produce more detectable deterrence effects at lower collateral-harm cost. Whether NYC's concurrent enforcement changes under the Adams mandate contributed to the observed 2022–2025 crime declines — and if so, which components — remains an open question that future research with individual-level administrative data could address. For now, the evidence does not support treating vehicle pursuit escalation as a principal crime-reduction tool when better-evidenced alternatives exist.
+
+For agencies currently operating under permissive pursuit policies, these findings point toward investment in two areas: data infrastructure and pursuit alternatives. @perf2023vehicular recommends that agencies implement real-time pursuit reporting linked to officer, suspect, and outcome characteristics; such records would enable the individual-level analysis that aggregate administrative data cannot support. Pursuit alternatives (e.g., tire deflation devices, GPS tagging technology, and aerial support) offer pathways to apprehension without generating the collision externalities documented here [@perf2023vehicular]. The Tisch partial re-restriction offers a promising natural experiment in precisely this direction: with a longer post-restriction observation window, expanded comparison data, and individual-level pursuit records, future research may be able to estimate the effects of the new policy regime with greater precision.
+
+# Conclusion
+
+The NYPD's pursuit escalation clearly increased pursuit-related collisions but produced no credible evidence of offsetting crime reduction. The precinct shooting estimate is undermined by non-parallel pre-trends, the robbery estimate runs opposite to deterrence, the national comparison finds no significant departure from the counterfactual, and crime did not rise after the February 2025 restriction sharply reduced pursuits. The collision costs are demonstrable; the crime-prevention benefits are not.
+
+Whether this pattern persists over a longer post-restriction period and extends to other jurisdictions remains an open question. For now, agencies should not assume that expanded pursuit authority deters crime at a scale sufficient to offset its harms. The break-even framework provides a concrete standard against which stronger future evidence can be judged.
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
+
+# Appendix A: Design Map {.unnumbered}
+
+## Table A1: Design Map {.unnumbered}
+
+This table maps each design used in the paper to its identifying assumption and to what it can and cannot show.
+
+| Design | Outcome(s) | Identifying Assumption | Shows | Cannot Show |
+|--------|-----------|------------------------|-------|-------------|
+| City ITS | Collisions | Counterfactual trend continuation; pursuit-crash administrative coding | Collision burden of the escalation | Administrative undercounting in pursuit-crash coding |
+| City ITS | Crime | Pre-trend continuation | Within-NYC change; full-attribution upper bound | Policy effect vs. national/secular trends |
+| Borough ITS | All four outcomes | Heterogeneity tracks pursuit intensity | Dose-scaling mechanism check across boroughs (non-monotonic in practice) | Borough-specific confounds |
+| Precinct DiD | Crime + crashes | Parallel trends across baseline-crime groups | Exposure gradient (descriptive for crime) | Causal crime effects (pre-trends fail) |
+| Generalized Synthetic Control | Shootings | Latent factors capture national trends; SUTVA-clean donors | NYC's shooting trajectory relative to its counterfactual | Effects smaller than wide confidence intervals |
+| Re-restriction ITS (Tisch) | All four outcomes | Post-Maddrey baseline continuation | Symmetric collision response to the pursuit reduction; absence of a short-run deterrence rebound | Gradual deterrence decay masked by secular trend |
+| Cost-Benefit Analysis | — | ITS crime decline as full-attribution benchmark | Break-even causal share $\theta^*$ | Confirmation that the break-even threshold is met |
+
+# Appendix B: Supplemental Regression Tables {.unnumbered}
+
+## Table B1: Borough-Level ITS Coefficients — All Four Outcomes {.unnumbered}
+
+Newey-West HAC standard errors (lag = 6). *b*₂ = immediate level shift at October 2022; *b*₃ = change in post-intervention slope. Significance: \*\*\* *p* < .001, \*\* *p* < .01, \* *p* < .05.
+
+```{r table-b1}
+#| label: tbl-b1
+#| tbl-cap: "Table B1. Borough-Level ITS Coefficients — All Four Outcomes"
+
+tbl_b1 <- read_csv(here("output", "publication_tables", "table_borough_its.csv"),
+                   show_col_types = FALSE)
+tbl_b1 |>
+  flextable() |>
+  set_table_properties(layout = "autofit", width = 1) |>
+  autofit()
+```
+
+## Table B2: Precinct-Level DiD Event Study Coefficients — Shooting Incidents {.unnumbered}
+
+Estimates from `feols(shooting_incidents ~ i(rel_time, high_crime_shoot, ref = -1) | pct + month_date, cluster = ~pct)`. *t* = 0 corresponds to October 2022. Standard errors clustered by precinct (G = 77). \* = 95% CI excludes zero.
+
+```{r table-b2}
+#| label: tbl-b2
+#| tbl-cap: "Table B2. DiD Event Study Coefficients — Shooting Incidents"
+
+tbl_b2_path <- here("output", "publication_tables", "table_a2_ddd_shootings.csv")
+if (file.exists(tbl_b2_path)) {
+  read_csv(tbl_b2_path, show_col_types = FALSE) |>
+    flextable() |>
+    set_table_properties(layout = "autofit", width = 1) |>
+    autofit()
+} else {
+  cat("Table B2 not yet generated — run 00_regenerate_pub_tables.R")
+}
+```
+
+## Table B3: Precinct-Level DiD Event Study Coefficients — Gun Violence {.unnumbered}
+
+Estimates from `feols(gun_violence_count ~ i(rel_time, high_crime_gunviol, ref = -1) | pct + month_date, cluster = ~pct)`. Gun violence is defined as the sum of shooting incidents and shots-fired reports. *t* = 0 corresponds to October 2022. Standard errors clustered by precinct (G = 77). \* = 95% CI excludes zero.
+
+```{r table-b3}
+#| label: tbl-b3
+#| tbl-cap: "Table B3. DiD Event Study Coefficients — Gun Violence"
+
+tbl_b3_path <- here("output", "publication_tables", "table_a3_ddd_gun_violence.csv")
+if (file.exists(tbl_b3_path)) {
+  read_csv(tbl_b3_path, show_col_types = FALSE) |>
+    flextable() |>
+    set_table_properties(layout = "autofit", width = 1) |>
+    autofit()
+} else {
+  cat("Table B3 not yet generated — run 00_regenerate_pub_tables.R")
+}
+```
+
+## Table B4: Precinct-Level DiD Event Study Coefficients — Robberies {.unnumbered}
+
+Estimates from `feols(robbery_count ~ i(rel_time, high_crime_rob, ref = -1) | pct + month_date, cluster = ~pct)`. *t* = 0 corresponds to October 2022. Standard errors clustered by precinct (G = 77). \* = 95% CI excludes zero.
+
+```{r table-b4}
+#| label: tbl-b4
+#| tbl-cap: "Table B4. DiD Event Study Coefficients — Robberies"
+
+tbl_b4_path <- here("output", "publication_tables", "table_a4_ddd_robberies.csv")
+if (file.exists(tbl_b4_path)) {
+  read_csv(tbl_b4_path, show_col_types = FALSE) |>
+    flextable() |>
+    set_table_properties(layout = "autofit", width = 1) |>
+    autofit()
+} else {
+  cat("Table B4 not yet generated — run 00_regenerate_pub_tables.R")
+}
+```
+
+## Table B5: Precinct-Level DiD Event Study Coefficients — Pursuit-Related Collisions {.unnumbered}
+
+Estimates from `feols(collision_count ~ i(rel_time, high_crash, ref = -1) | pct + month_date, cluster = ~pct)`. Note: high-crash precincts are expected to show larger collision increases post-policy (more pursuit activity), not larger crime reductions — the directional prediction for crashes differs from crime outcomes.
+
+```{r table-b5}
+#| label: tbl-b5
+#| tbl-cap: "Table B5. DiD Event Study Coefficients — Pursuit-Related Collisions"
+
+tbl_b5_path <- here("output", "publication_tables", "table_a5_ddd_crashes.csv")
+if (file.exists(tbl_b5_path)) {
+  read_csv(tbl_b5_path, show_col_types = FALSE) |>
+    flextable() |>
+    set_table_properties(layout = "autofit", width = 1) |>
+    autofit()
+} else {
+  cat("Table B5 not yet generated — run 00_regenerate_pub_tables.R")
+}
+```
+
+## Table B6: ITS Sensitivity to Alternative Intervention Dates {.unnumbered}
+
+ITS estimates under five intervention dates spanning ±2 months around the primary specification (October 2022). *b*₂ = immediate level shift; *b*₃ = change in post-intervention slope. Newey-West HAC standard errors (lag = 6) in parentheses. \*\*\* *p* < .001, \*\* *p* < .01, \* *p* < .05.
+
+```{r table-b6}
+#| label: tbl-b6
+#| tbl-cap: "Table B6. ITS Sensitivity to Alternative Intervention Dates"
+
+sens_raw <- read_csv(here("output", "its_results", "its_sensitivity_dates.csv"),
+                     show_col_types = FALSE)
+
+fmt_est <- function(est, se, p) {
+  stars <- dplyr::case_when(p < .001 ~ "***", p < .01 ~ "**", p < .05 ~ "*", TRUE ~ "")
+  paste0(round(est, 2), " (", round(se, 2), ")", stars)
+}
+
+sens_tbl <- sens_raw |>
+  filter(outcome %in% c("Pursuit Collisions", "Shooting Incidents"),
+         term %in% c("D_s", "P_s")) |>
+  mutate(
+    Date = format(as.Date(intervention_date), "%b %Y"),
+    Coef = if_else(term == "D_s", "b₂", "b₃"),
+    Label = paste0(outcome, " — ", Coef),
+    Value = fmt_est(estimate, std.error, p.value)
+  ) |>
+  select(Date, Label, Value) |>
+  tidyr::pivot_wider(names_from = Label, values_from = Value) |>
+  arrange(factor(Date, levels = c("Sep 2022", "Oct 2022", "Nov 2022", "Dec 2022", "Jan 2023")))
+
+sens_tbl |>
+  flextable() |>
+  bold(i = which(sens_tbl$Date == "Oct 2022")) |>
+  add_footer_lines("Bold row = primary specification. b₂ = immediate level shift at intervention; b₃ = change in post-intervention slope.") |>
+  set_table_properties(layout = "autofit", width = 1) |>
+  autofit()
+```
+
+## Table B7: Cross-City Placebo Tests (Shooting Incidents) {.unnumbered}
+
+ITS segmented regression applied to shooting incident rates (per 100,000 population per month) in NYC and three comparison cities, using October 2022 as the pseudo-intervention date. A clean placebo requires that *b*₂ and *b*₃ are both statistically indistinguishable from zero in the non-NYC cities; statistically significant *b*₂ or *b*₃ coefficients in a city that did not experience a pursuit policy change would suggest the October 2022 pseudo-intervention picks up other concurrent shocks rather than a pursuit-specific signal. Newey-West HAC standard errors (lag = 6) in parentheses. \*\*\* *p* < .001, \*\* *p* < .01, \* *p* < .05.
+
+```{r table-b7}
+#| label: tbl-b7
+#| tbl-cap: "Table B7. Cross-City Placebo Tests — Shooting Incidents (per 100,000 per month)"
+
+placebo_raw <- read_csv(here("output", "its_results", "its_placebo_comparison.csv"),
+                        show_col_types = FALSE)
+
+placebo_tbl <- placebo_raw |>
+  mutate(
+    `Pre-trend (b₁)` = fmt_est(b1_coef, b1_se, b1_p),
+    `Level shift (b₂)` = fmt_est(b2_coef, b2_se, b2_p),
+    `Slope change (b₃)` = fmt_est(b3_coef, b3_se, b3_p)
+  ) |>
+  select(City = city, `Pre-trend (b₁)`, `Level shift (b₂)`, `Slope change (b₃)`)
+
+placebo_tbl |>
+  flextable() |>
+  bold(i = which(placebo_tbl$City == "NYC")) |>
+  add_footer_lines("Bold row = treated city. Outcome expressed as shooting incidents per 100,000 population per month. Pre-period placebo tests using randomly-assigned pseudo-intervention dates within the pre-period (not shown) produce no comparable signals within the NYC analysis window.") |>
+  set_table_properties(layout = "autofit", width = 1) |>
+  autofit()
+```
+
+# Appendix C: Generalized Synthetic Control {.unnumbered}
+
+## Table C1: Cities Excluded from SUTVA-Clean Donor Pool {.unnumbered #tbl-c1}
+
+The cities listed below were excluded from the SUTVA-clean gsynth donor pool because of documented city-level or binding state-level pursuit policy changes between 2018 and 2024. Design, results, and figures for the generalized synthetic control analysis are reported in the National Comparison section of the main text.
+
+| City | Reason for Exclusion |
+|------|---------------------|
+| Atlanta | Zero-chase policy, January 2020 |
+| Chesapeake | Revised pursuit policy, November 2023 |
+| Chicago | Tightened 2020, revised 2022 |
+| Cincinnati | Violent felonies only, February 2023 |
+| Fort Wayne | IN statewide minimum standards, January 2023 |
+| Houston | Banned Class C vehicle pursuits, September 2023 |
+| Indianapolis | IN statewide minimum standards, January 2023 |
+| Jersey City | NJ AG statewide directive, 2021–2022 |
+| Lexington-Fayette | KY statewide written-policy mandate, 2020 |
+| Long Beach | Special Order 2023-5, June 2023 |
+| Louisville/Jefferson County | Loosened July 2019 + KY state mandate 2020 |
+| New Orleans | Policy revised August 2019 and February 2024 |
+| Newark | NJ AG statewide directive, 2021–2022 |
+| Oakland | 50 mph speed cap, December 2022 |
+| Oklahoma City | Tightened, June 2022 |
+| Portland | Overhaul, January 2024 |
+| San Francisco | Prop E loosened, March 2024 |
+| San Jose | Dept. Order 2022-037, 2022 |
+| Seattle | WA state HB 1054/SB 5352/I-2113, 2021–2024 |
+| Spokane | WA state law changes, 2021–2024 |
+| Stockton | Voters loosened, late 2024 |
+| Tampa | Revised after fatal crash, 2022 |
+| Toledo | New policy, mid-2024 |
+| Washington | Restricted 2022; loosened 2024 |
+
+## Table C2: Vanilla Synthetic Control, Borough-Level Robbery Rate {.unnumbered #tbl-c2}
+
+As a robustness check on the gsynth results reported in the National Comparison section, we also estimated a conventional ("vanilla") synthetic control [@abadie2015comparative] separately for each NYC borough, using the `tidysynth` implementation with a national donor pool of 34 U.S. cities reporting complete 2014–2024 robbery data [@kaplan2025ucr]. The optimization converges for three of five boroughs; for the Bronx and Staten Island the weight-optimization problem is computationally singular given this donor pool and predictor set, and no estimate is reported for either. Table C2 presents results for the three estimable boroughs. We also estimated an analogous shooting-outcome vanilla SCM using agency-reported shooting data, but that donor pool shrinks to 7 cities with complete pre/post coverage, and the result is fully degenerate — a single donor city (Boston) receives 100% of the synthetic control weight for every borough — so it is not reported in tabular form here. Consistent with the borough-level ITS and precinct-level DiD findings in the main text, the robbery vanilla-SCM results show no clear dose-response relationship with pursuit intensity across boroughs, and only Queens reaches conventional statistical significance.
+
+```{r table-c2}
+#| label: tbl-c2-table
+#| tbl-cap: "Table C2. Vanilla Synthetic Control: Robbery Rate by Borough"
+
+scm_rob_path <- here("output", "national_scm", "scm_robbery_summary.csv")
+if (file.exists(scm_rob_path)) {
+  read_csv(scm_rob_path, show_col_types = FALSE) |>
+    mutate(
+      `Top Donor (Weight)`  = paste0(top_donor, " (", round(max_weight * 100), "%)"),
+      `Pre-Treatment MSPE`  = round(pre_mspe, 1),
+      `Post-Treatment Gap`  = sprintf("%+.1f", post_gap),
+      `Fisher's Exact p`    = gsub("^0", "", sprintf("%.3f", fisher_p))
+    ) |>
+    select(Borough = treated_boro, `Top Donor (Weight)`, `Pre-Treatment MSPE`,
+           `Post-Treatment Gap`, `Fisher's Exact p`) |>
+    flextable() |>
+    add_footer_lines("Bronx and Staten Island are omitted: the SCM weight optimization was computationally singular for both boroughs given this donor pool and predictor set. Donor pool: 34 U.S. cities with complete 2014-2024 Kaplan UCR robbery data. Pre-Treatment MSPE = mean squared prediction error of the synthetic fit prior to October 2022; Post-Treatment Gap = mean actual-minus-synthetic robbery rate (per 100,000) over 2023-2024; Fisher's Exact p from placebo-based permutation inference.") |>
+    set_table_properties(layout = "autofit", width = 1) |>
+    autofit()
+} else {
+  cat("Table C2 not yet generated — run 10_national_scm.R")
+}
+```
+

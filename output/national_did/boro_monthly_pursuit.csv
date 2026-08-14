@@ -1,0 +1,387 @@
+month_date,boro,pursuit_events
+2018-01-01,Brooklyn,3
+2018-01-01,Queens,2
+2018-02-01,Bronx,2
+2018-02-01,Brooklyn,1
+2018-02-01,Manhattan,1
+2018-02-01,Queens,3
+2018-03-01,Brooklyn,1
+2018-03-01,Manhattan,2
+2018-04-01,Brooklyn,1
+2018-04-01,Queens,1
+2018-05-01,Bronx,1
+2018-05-01,Brooklyn,2
+2018-05-01,Manhattan,2
+2018-07-01,Manhattan,1
+2018-07-01,Queens,4
+2018-08-01,Bronx,2
+2018-08-01,Brooklyn,3
+2018-08-01,Manhattan,1
+2018-08-01,Queens,5
+2018-09-01,Bronx,1
+2018-09-01,Queens,2
+2018-10-01,Bronx,1
+2018-10-01,Brooklyn,4
+2018-10-01,Queens,1
+2018-10-01,Staten Island,1
+2018-11-01,Bronx,1
+2018-11-01,Brooklyn,3
+2018-11-01,Queens,2
+2018-12-01,Bronx,2
+2018-12-01,Brooklyn,1
+2018-12-01,Queens,3
+2018-12-01,Staten Island,1
+2019-01-01,Bronx,1
+2019-01-01,Brooklyn,1
+2019-01-01,Queens,3
+2019-02-01,Bronx,1
+2019-02-01,Brooklyn,3
+2019-02-01,Staten Island,1
+2019-03-01,Bronx,3
+2019-03-01,Brooklyn,2
+2019-03-01,Manhattan,1
+2019-03-01,Queens,1
+2019-04-01,Bronx,1
+2019-04-01,Brooklyn,1
+2019-04-01,Queens,2
+2019-05-01,Manhattan,1
+2019-05-01,Queens,1
+2019-06-01,Bronx,1
+2019-06-01,Brooklyn,2
+2019-06-01,Queens,3
+2019-07-01,Bronx,3
+2019-07-01,Brooklyn,2
+2019-07-01,Manhattan,1
+2019-07-01,Queens,3
+2019-08-01,Brooklyn,6
+2019-08-01,Manhattan,1
+2019-08-01,Queens,3
+2019-08-01,Staten Island,1
+2019-09-01,Bronx,2
+2019-09-01,Manhattan,1
+2019-10-01,Bronx,1
+2019-10-01,Queens,3
+2019-11-01,Bronx,2
+2019-11-01,Brooklyn,1
+2019-11-01,Manhattan,1
+2019-11-01,Queens,1
+2019-12-01,Bronx,1
+2019-12-01,Brooklyn,1
+2019-12-01,Queens,1
+2020-01-01,Bronx,2
+2020-01-01,Queens,2
+2020-01-01,Staten Island,1
+2020-02-01,Bronx,1
+2020-02-01,Queens,5
+2020-02-01,Staten Island,2
+2020-03-01,Bronx,2
+2020-03-01,Brooklyn,3
+2020-03-01,Manhattan,1
+2020-03-01,Queens,1
+2020-04-01,Brooklyn,3
+2020-04-01,Manhattan,1
+2020-04-01,Queens,1
+2020-05-01,Brooklyn,1
+2020-05-01,Queens,5
+2020-05-01,Staten Island,2
+2020-06-01,Bronx,1
+2020-06-01,Brooklyn,1
+2020-06-01,Manhattan,1
+2020-06-01,Queens,1
+2020-06-01,Staten Island,1
+2020-07-01,Bronx,1
+2020-07-01,Brooklyn,3
+2020-07-01,Queens,2
+2020-08-01,Bronx,2
+2020-08-01,Brooklyn,1
+2020-08-01,Manhattan,1
+2020-09-01,Bronx,1
+2020-09-01,Brooklyn,4
+2020-09-01,Manhattan,1
+2020-09-01,Queens,2
+2020-10-01,Bronx,2
+2020-10-01,Brooklyn,5
+2020-10-01,Manhattan,2
+2020-10-01,Queens,2
+2020-11-01,Bronx,3
+2020-11-01,Brooklyn,15
+2020-11-01,Queens,4
+2020-11-01,Staten Island,2
+2020-12-01,Bronx,1
+2020-12-01,Brooklyn,1
+2020-12-01,Manhattan,3
+2020-12-01,Queens,2
+2020-12-01,Staten Island,1
+2021-01-01,Brooklyn,5
+2021-01-01,Queens,4
+2021-01-01,Staten Island,1
+2021-02-01,Brooklyn,2
+2021-02-01,Queens,1
+2021-03-01,Bronx,2
+2021-03-01,Brooklyn,6
+2021-03-01,Queens,3
+2021-04-01,Bronx,3
+2021-04-01,Manhattan,1
+2021-04-01,Queens,2
+2021-04-01,Staten Island,1
+2021-05-01,Bronx,1
+2021-05-01,Brooklyn,2
+2021-05-01,Manhattan,4
+2021-05-01,Queens,1
+2021-06-01,Brooklyn,5
+2021-06-01,Queens,2
+2021-07-01,Brooklyn,7
+2021-07-01,Manhattan,1
+2021-07-01,Queens,4
+2021-07-01,Staten Island,1
+2021-08-01,Brooklyn,4
+2021-08-01,Queens,3
+2021-09-01,Bronx,1
+2021-09-01,Brooklyn,6
+2021-09-01,Manhattan,3
+2021-09-01,Queens,2
+2021-09-01,Staten Island,1
+2021-10-01,Bronx,3
+2021-10-01,Brooklyn,7
+2021-10-01,Queens,4
+2021-10-01,Staten Island,2
+2021-11-01,Bronx,2
+2021-11-01,Brooklyn,1
+2021-11-01,Manhattan,1
+2021-11-01,Staten Island,2
+2021-12-01,Bronx,3
+2021-12-01,Brooklyn,2
+2021-12-01,Queens,2
+2021-12-01,Staten Island,1
+2022-01-01,Bronx,3
+2022-01-01,Brooklyn,5
+2022-01-01,Manhattan,1
+2022-01-01,Queens,5
+2022-01-01,Staten Island,1
+2022-02-01,Bronx,6
+2022-02-01,Brooklyn,6
+2022-02-01,Manhattan,2
+2022-02-01,Queens,3
+2022-02-01,Staten Island,2
+2022-03-01,Bronx,2
+2022-03-01,Brooklyn,7
+2022-03-01,Manhattan,1
+2022-03-01,Staten Island,1
+2022-04-01,Bronx,3
+2022-04-01,Brooklyn,4
+2022-04-01,Manhattan,1
+2022-04-01,Queens,4
+2022-05-01,Bronx,6
+2022-05-01,Brooklyn,4
+2022-05-01,Queens,3
+2022-06-01,Bronx,1
+2022-06-01,Brooklyn,3
+2022-06-01,Queens,2
+2022-06-01,Staten Island,1
+2022-07-01,Bronx,2
+2022-07-01,Brooklyn,1
+2022-07-01,Manhattan,2
+2022-07-01,Queens,3
+2022-08-01,Bronx,1
+2022-08-01,Brooklyn,3
+2022-08-01,Queens,1
+2022-08-01,Staten Island,1
+2022-09-01,Bronx,2
+2022-09-01,Brooklyn,6
+2022-09-01,Manhattan,1
+2022-09-01,Queens,5
+2022-09-01,Staten Island,1
+2022-10-01,Bronx,3
+2022-10-01,Brooklyn,10
+2022-10-01,Manhattan,4
+2022-10-01,Queens,4
+2022-10-01,Staten Island,1
+2022-11-01,Bronx,7
+2022-11-01,Brooklyn,13
+2022-11-01,Manhattan,2
+2022-11-01,Queens,7
+2022-11-01,Staten Island,3
+2022-12-01,Bronx,21
+2022-12-01,Brooklyn,8
+2022-12-01,Manhattan,10
+2022-12-01,Queens,12
+2022-12-01,Staten Island,3
+2023-01-01,Bronx,47
+2023-01-01,Brooklyn,26
+2023-01-01,Manhattan,30
+2023-01-01,Queens,20
+2023-01-01,Staten Island,10
+2023-02-01,Bronx,35
+2023-02-01,Brooklyn,19
+2023-02-01,Manhattan,21
+2023-02-01,Queens,14
+2023-02-01,Staten Island,5
+2023-03-01,Bronx,30
+2023-03-01,Brooklyn,15
+2023-03-01,Manhattan,12
+2023-03-01,Queens,15
+2023-03-01,Staten Island,5
+2023-04-01,Bronx,30
+2023-04-01,Brooklyn,24
+2023-04-01,Manhattan,6
+2023-04-01,Queens,31
+2023-04-01,Staten Island,4
+2023-05-01,Bronx,34
+2023-05-01,Brooklyn,38
+2023-05-01,Manhattan,9
+2023-05-01,Queens,42
+2023-05-01,Staten Island,6
+2023-06-01,Bronx,28
+2023-06-01,Brooklyn,36
+2023-06-01,Manhattan,11
+2023-06-01,Queens,17
+2023-06-01,Staten Island,5
+2023-07-01,Bronx,33
+2023-07-01,Brooklyn,39
+2023-07-01,Manhattan,17
+2023-07-01,Queens,44
+2023-07-01,Staten Island,13
+2023-08-01,Bronx,23
+2023-08-01,Brooklyn,44
+2023-08-01,Manhattan,11
+2023-08-01,Queens,59
+2023-08-01,Staten Island,9
+2023-09-01,Bronx,29
+2023-09-01,Brooklyn,36
+2023-09-01,Manhattan,8
+2023-09-01,Queens,36
+2023-09-01,Staten Island,9
+2023-10-01,Bronx,62
+2023-10-01,Brooklyn,46
+2023-10-01,Manhattan,12
+2023-10-01,Queens,71
+2023-10-01,Staten Island,4
+2023-11-01,Bronx,54
+2023-11-01,Brooklyn,41
+2023-11-01,Manhattan,14
+2023-11-01,Queens,63
+2023-11-01,Staten Island,11
+2023-12-01,Bronx,38
+2023-12-01,Brooklyn,50
+2023-12-01,Manhattan,17
+2023-12-01,Queens,63
+2023-12-01,Staten Island,11
+2024-01-01,Bronx,55
+2024-01-01,Brooklyn,70
+2024-01-01,Manhattan,24
+2024-01-01,Queens,64
+2024-01-01,Staten Island,14
+2024-02-01,Bronx,66
+2024-02-01,Brooklyn,54
+2024-02-01,Manhattan,15
+2024-02-01,Queens,60
+2024-02-01,Staten Island,13
+2024-03-01,Bronx,44
+2024-03-01,Brooklyn,39
+2024-03-01,Manhattan,18
+2024-03-01,Queens,50
+2024-03-01,Staten Island,12
+2024-04-01,Bronx,41
+2024-04-01,Brooklyn,46
+2024-04-01,Manhattan,13
+2024-04-01,Queens,57
+2024-04-01,Staten Island,9
+2024-05-01,Bronx,46
+2024-05-01,Brooklyn,38
+2024-05-01,Manhattan,16
+2024-05-01,Queens,61
+2024-05-01,Staten Island,3
+2024-06-01,Bronx,34
+2024-06-01,Brooklyn,44
+2024-06-01,Manhattan,14
+2024-06-01,Queens,47
+2024-06-01,Staten Island,5
+2024-07-01,Bronx,30
+2024-07-01,Brooklyn,39
+2024-07-01,Manhattan,6
+2024-07-01,Queens,56
+2024-07-01,Staten Island,6
+2024-08-01,Bronx,25
+2024-08-01,Brooklyn,37
+2024-08-01,Manhattan,12
+2024-08-01,Queens,84
+2024-08-01,Staten Island,9
+2024-09-01,Bronx,35
+2024-09-01,Brooklyn,29
+2024-09-01,Manhattan,10
+2024-09-01,Queens,67
+2024-09-01,Staten Island,6
+2024-10-01,Bronx,41
+2024-10-01,Brooklyn,36
+2024-10-01,Manhattan,8
+2024-10-01,Queens,62
+2024-10-01,Staten Island,12
+2024-11-01,Bronx,37
+2024-11-01,Brooklyn,26
+2024-11-01,Manhattan,20
+2024-11-01,Queens,38
+2024-11-01,Staten Island,11
+2024-12-01,Bronx,35
+2024-12-01,Brooklyn,28
+2024-12-01,Manhattan,10
+2024-12-01,Queens,35
+2024-12-01,Staten Island,8
+2025-01-01,Bronx,32
+2025-01-01,Brooklyn,22
+2025-01-01,Manhattan,10
+2025-01-01,Queens,42
+2025-01-01,Staten Island,11
+2025-02-01,Bronx,10
+2025-02-01,Brooklyn,6
+2025-02-01,Manhattan,3
+2025-02-01,Queens,8
+2025-02-01,Staten Island,3
+2025-03-01,Bronx,20
+2025-03-01,Brooklyn,8
+2025-03-01,Queens,19
+2025-03-01,Staten Island,9
+2025-04-01,Bronx,10
+2025-04-01,Brooklyn,3
+2025-04-01,Manhattan,5
+2025-04-01,Queens,9
+2025-04-01,Staten Island,2
+2025-05-01,Bronx,12
+2025-05-01,Brooklyn,5
+2025-05-01,Manhattan,5
+2025-05-01,Queens,7
+2025-05-01,Staten Island,2
+2025-06-01,Bronx,10
+2025-06-01,Brooklyn,7
+2025-06-01,Manhattan,5
+2025-06-01,Queens,12
+2025-06-01,Staten Island,3
+2025-07-01,Bronx,23
+2025-07-01,Brooklyn,3
+2025-07-01,Manhattan,11
+2025-07-01,Queens,10
+2025-07-01,Staten Island,3
+2025-08-01,Bronx,9
+2025-08-01,Brooklyn,13
+2025-08-01,Manhattan,3
+2025-08-01,Queens,10
+2025-08-01,Staten Island,2
+2025-09-01,Bronx,8
+2025-09-01,Brooklyn,12
+2025-09-01,Manhattan,6
+2025-09-01,Queens,10
+2025-09-01,Staten Island,1
+2025-10-01,Bronx,9
+2025-10-01,Brooklyn,3
+2025-10-01,Manhattan,8
+2025-10-01,Queens,6
+2025-10-01,Staten Island,1
+2025-11-01,Bronx,4
+2025-11-01,Brooklyn,6
+2025-11-01,Manhattan,7
+2025-11-01,Queens,4
+2025-11-01,Staten Island,1
+2025-12-01,Bronx,4
+2025-12-01,Brooklyn,5
+2025-12-01,Manhattan,3
+2025-12-01,Queens,6
+2025-12-01,Staten Island,1

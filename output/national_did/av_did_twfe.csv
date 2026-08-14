@@ -1,0 +1,2 @@
+term,estimate,std.error,statistic,p.value,conf.low,conf.high,outcome,model,n_treated,n_control,note
+did,0.10525161872923405,1.753340700041278,0.06002918812456482,0.9522558920969424,-3.374644321624681,3.585147559083149,shooting_rate,twfe_monthly,1,97,"monthly TWFE, year + month-of-year FEs, cluster by city"

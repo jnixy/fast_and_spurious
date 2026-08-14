@@ -1,0 +1,6 @@
+outcome,pre_tisch_mean,post_tisch_mean,pct_change,pre_tisch_fmt,post_tisch_fmt,pct_change_fmt,deterrence_prediction,actual_direction,consistent_with_deterrence
+Pursuits,133.82142857142858,34.09090909090909,-74.52507460513866,133.8,34.1,-74.5%,Decrease (mechanical),Decrease,—
+Crashes,28.071428571428573,8.090909090909092,-71.17742308582004,28.1,8.1,-71.2%,Decrease (mechanical),Decrease,—
+Robberies,1389.2142857142858,1267.3636363636365,-8.771191788313502,1389.2,1267.4,-8.8%,Increase (if deterrence real),Decrease,No
+Shootings,77.82142857142857,58,-25.470399265718218,77.8,58,-25.5%,Increase (if deterrence real),Decrease,No
+Gun Violence,250.1071428571429,210.45454545454547,-15.854244284916849,250.1,210.5,-15.9%,Increase (if deterrence real),Decrease,No

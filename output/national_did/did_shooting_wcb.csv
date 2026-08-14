@@ -1,0 +1,2 @@
+outcome,model,term,estimate,p_value,conf_low,conf_high,n_clusters,B,dist_type
+shooting_rate,twfe_wcb_webb,did,24.389814790962344,9.000900090009e-4,15.706664980750471,32.33181678926072,12,9999,webb

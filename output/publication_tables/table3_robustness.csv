@@ -1,0 +1,8 @@
+method,outcome,estimate,ci,p_value,note
+ITS (segmented regression),Robberies,169.3,"[-33.5, 372.2]",0.101,"Monthly counts, seasonality + COVID controls"
+ITS (segmented regression),Shootings,-26.1,"[-46.8, -5.5]",0.014,"Monthly counts, seasonality + COVID controls"
+ITS (CausalImpact/BSTS),Robberies,74.8,"[-9.1, 159.1]",0.04,Bayesian structural time series
+ITS (CausalImpact/BSTS),Shootings,-30.9,"[-49, -12.3]",0.001,Bayesian structural time series
+DiD (county-level TWFE),Robberies,0.284,"[-0.088, 0.656]",0.135,"Log robbery, NYC vs. rest-of-NYS counties, 2015-2023"
+DiD (GIVE monthly),Shootings,0.214,"[0.214, 0.214]",0,"Log shootings, NYC vs. non-NYC GIVE jurisdictions"
+Synthetic Control,Robberies,15893,"[15893, 15893]",NA,"NYC vs. synthetic NYC, gap = actual - counterfactual"

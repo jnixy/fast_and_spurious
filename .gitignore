@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# renv: track lock file but not the library itself
+renv/library/
+renv/staging/
+renv/.cache/
+
+# Raw data is not distributed here -- see README's Data Sources section
+data/

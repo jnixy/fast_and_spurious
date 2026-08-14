@@ -1,0 +1,3 @@
+estimator,donor_pool,att,ci_lower,ci_upper,p_value,n_factors,n_donors,n_months,n_pre,n_post,pre_rmspe,n_sig_months
+gsynth,SUTVA-clean (75 donors),1.9633492380108162,NA,NA,NA,3,75,144,105,39,3.7118016838411556,0
+gsynth,Full panel (49 donors),-1.826314046709568,NA,NA,NA,1,49,144,105,39,3.698309728474417,NA

@@ -1,0 +1,3 @@
+model,wald_stat,df,p_value
+Shooting (Raw),6.466735978240994,18,5.928034951621284e-11
+Shooting (Group-Detrended),12.617257505429754,18,4.7563217121915964e-20

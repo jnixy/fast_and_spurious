@@ -1,0 +1,11 @@
+outcome,term,estimate_fmt,ci,p.value
+Pursuits,Level shift,130.9**,"[54.7, 207.2]",0.0011760994708646
+Pursuits,Slope change,-2.1,"[-5.3, 1.2]",0.2145152954245316
+Collisions,Level shift,24.6**,"[7.8, 41.3]",0.00517155940258783
+Collisions,Slope change,-0.4,"[-1.1, 0.3]",0.30631602916797807
+Robberies,Level shift,-7.7,"[-133.7, 118.2]",0.9044659640893588
+Robberies,Slope change,-13.5***,"[-17.4, -9.6]",1.9634084566793853e-9
+Shootings,Level shift,-32.7***,"[-50, -15.4]",3.908883654072894e-4
+Shootings,Slope change,-2.4***,"[-2.9, -1.8]",2.868007296920296e-13
+Gun Violence,Level shift,-131.5***,"[-197.3, -65.6]",1.910942023493904e-4
+Gun Violence,Slope change,-7.6***,"[-9.5, -5.7]",1.1502166281583094e-11

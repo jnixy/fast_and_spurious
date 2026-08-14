@@ -1,0 +1,2 @@
+term,estimate,std.error,statistic,p.value,conf.low,conf.high,outcome,model
+did,71.8201849641636,17.45814569215932,4.113849559430529,2.0114426064721358e-4,36.47801671223139,107.16235321609582,robbery_rate,twfe

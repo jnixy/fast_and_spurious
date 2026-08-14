@@ -1,0 +1,2 @@
+predictor,response,r_squared,f_statistic,n_precincts,correlation
+pre_pursuit_mean,post_pursuit_mean,0.602070684062869,113.47568398767908,77,0.7759321388258571

@@ -1,0 +1,18 @@
+component,value
+Time horizon,39 months (Oct 2022 - Sep 2025)
+--- COSTS (well-identified) ---,
+Excess pursuit crashes,676
+"Estimated fatalities (central, 1%)",6.8
+Total crash costs (central),"$168,906,524"
+--- ITS-ESTIMATED CRIME CHANGES ---,
+Shooting reduction (ITS estimate),-3026
+Robbery change (ITS estimate),-10273
+--- BENEFITS (require causal assumption) ---,
+Shooting benefit (100% attribution),"$3,782,860,877"
+Breakeven causal share,4%
+--- NET ASSESSMENT ---,
+Net at 100% attribution (central),"$4,048,618,637"
+Net at 50% attribution (central),"$1,939,856,056"
+Net at 25% attribution (central),"$885,474,766"
+Net at 0% attribution (costs only),"$-168,906,524"
+B:C ratio at 100% attribution,24.97
