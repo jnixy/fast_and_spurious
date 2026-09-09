@@ -8,8 +8,9 @@ Purpose:
     onto the rendered manuscript. This script generates that reference doc from
     pandoc's own default template and overrides the styles below to a
     Journal of Quantitative Criminology (Springer) submission look:
-    Times New Roman 12pt body, single line spacing, plain bold black
-    unnumbered headings, 1" margins, centred page numbers in the footer.
+    Times New Roman 12pt body, single line spacing, 1" margins, right-aligned
+    page numbers in the header, and an APA-style heading hierarchy -- Level 1
+    bold and centred, Level 2 bold and flush left, Level 3 italic and flush left.
 
     Line numbering is intentionally NOT added (per author preference; the
     Editorial Manager submission system can add it on the reviewer PDF).
@@ -53,18 +54,28 @@ BODY_STYLES = [
     "Bibliography",
     "Footnote Text",
 ]
-HEADING_STYLES = ["Heading 1", "Heading 2", "Heading 3"]
+# Heading hierarchy (author preference; APA-style):
+#   Level 1 -- bold, centred
+#   Level 2 -- bold, flush left
+#   Level 3 -- italic (not bold), flush left
+HEADING_SPEC = {
+    "Heading 1": dict(bold=True,  italic=False, align=WD_ALIGN_PARAGRAPH.CENTER),
+    "Heading 2": dict(bold=True,  italic=False, align=WD_ALIGN_PARAGRAPH.LEFT),
+    "Heading 3": dict(bold=False, italic=True,  align=WD_ALIGN_PARAGRAPH.LEFT),
+}
 TITLE_BLOCK_STYLES = ["Title", "Author", "Date", "Abstract", "Abstract Title"]
 
 
-def set_style_font(style, font_name, size=None, bold=None, color=None):
-    """Set a style's font name (all script ranges), size, bold, and colour."""
+def set_style_font(style, font_name, size=None, bold=None, italic=None, color=None):
+    """Set a style's font name (all script ranges), size, bold, italic, colour."""
     font = style.font
     font.name = font_name
     if size is not None:
         font.size = size
     if bold is not None:
         font.bold = bold
+    if italic is not None:
+        font.italic = italic
     if color is not None:
         font.color.rgb = color
 
@@ -89,13 +100,13 @@ def set_style_font(style, font_name, size=None, bold=None, color=None):
             del rfonts.attrib[qn(theme_attr)]
 
 
-def add_page_number_footer(doc):
-    """Put a centred `PAGE` field in the primary footer of section 1."""
-    footer = doc.sections[0].footer
-    footer.is_linked_to_previous = False
-    para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+def add_page_number_header(doc):
+    """Put a right-aligned `PAGE` field in the primary header of section 1."""
+    header = doc.sections[0].header
+    header.is_linked_to_previous = False
+    para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
     para.text = ""
-    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
     run = para.add_run()
     fld_begin = OxmlElement("w:fldChar")
@@ -110,7 +121,7 @@ def add_page_number_footer(doc):
     for node in (fld_begin, instr, fld_sep, fld_end):
         run._r.append(node)
 
-    # Match the body font on the footer run directly (the "Footer" paragraph
+    # Match the body font on the header run directly (the "Header" paragraph
     # style may not exist in pandoc's default reference doc).
     run.font.name = BODY_FONT
     run.font.size = BODY_SIZE
@@ -134,15 +145,20 @@ def main():
         except KeyError:
             return
         set_style_font(style, BODY_FONT, size=kw.get("size", BODY_SIZE),
-                       bold=kw.get("bold"), color=kw.get("color"))
+                       bold=kw.get("bold"), italic=kw.get("italic"),
+                       color=kw.get("color"))
         if kw.get("single_space"):
             style.paragraph_format.line_spacing = BODY_LINE_SPACING
+        if kw.get("align") is not None:
+            style.paragraph_format.alignment = kw["align"]
 
     for name in BODY_STYLES:
         style_if_present(name, single_space=True)
 
-    for name in HEADING_STYLES:
-        style_if_present(name, bold=True, color=RGBColor(0, 0, 0), single_space=True)
+    for name, spec in HEADING_SPEC.items():
+        style_if_present(name, bold=spec["bold"], italic=spec["italic"],
+                         align=spec["align"], color=RGBColor(0, 0, 0),
+                         single_space=True)
 
     for name in TITLE_BLOCK_STYLES:
         style_if_present(name, bold=(name == "Title"), single_space=True)
@@ -154,8 +170,8 @@ def main():
     section.top_margin = Inches(1)
     section.bottom_margin = Inches(1)
 
-    # 3. Centred page numbers in the footer.
-    add_page_number_footer(doc)
+    # 3. Right-aligned page numbers in the header.
+    add_page_number_header(doc)
 
     doc.save(str(OUTPUT))
     print(f"Wrote {OUTPUT}")
