@@ -113,6 +113,14 @@ run_script("scripts/25_shooting_detrend.R")      # group-detrended DiD robustnes
 run_script("scripts/26_robbery_sensitivity.R")   # HonestDiD breakdown value
 run_script("scripts/19_gsynth_permutation.R")    # gsynth placebo-in-space permutation
 
+# ── Phase 6b: National comparison — robbery gsynth + effect-size bounds ─────────
+# JQC conditional-acceptance Editor Comment 1. 29 needs the borough annual panel
+# from script 08; 28 reads the fitted objects from scripts 18, 29 and the
+# retained borough DiD. 28 also depends on script 18's refreshed gsynth_att.csv
+# (est.avg CI columns), so run script 18 beforehand if the AV donor data changed.
+run_script("scripts/29_gsynth_annual.R")         # annual gsynth: shootings + robbery
+run_script("scripts/28_national_mde.R")          # national CIs in percentage terms
+
 # ── Summary ────────────────────────────────────────────────────────────────────
 total_min <- round((proc.time() - t_start)[["elapsed"]] / 60, 1)
 

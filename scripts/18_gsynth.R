@@ -242,6 +242,34 @@ fit_clean <- gsynth(
 message("CV-selected factors: r = ", fit_clean$r.cv)
 message("Average ATT (clean): ", round(fit_clean$att.avg, 3), " per 100k")
 
+# ------------------------------------------------------------------------------
+# 4b. Package-version robustness: force r = 3
+# ------------------------------------------------------------------------------
+# The R&R Round 1 analysis (gsynth 1.3.1) had cross-validation select r = 3.
+# gsynth 1.4.0 changed the CV routine (adds a 1-SE rule; different fold
+# construction) and now selects r = 0 for this panel — the raw CV MSPE is
+# lowest at r = 0 by a wide margin. To show the null does not hinge on that
+# package change, we also fit the SUTVA-clean panel with r fixed at 3. Reported
+# only in a manuscript footnote / the response memo, not the main text.
+fit_clean_r3 <- gsynth(
+  gva_rate ~ treat,
+  data      = panel_clean,
+  index     = c("unit", "time_index"),
+  force     = "two-way",
+  CV        = FALSE,
+  r         = 3,
+  se        = TRUE,
+  nboots    = BOOTSTRAP_REPS,
+  inference = "parametric",
+  seed      = 20241001,
+  parallel  = FALSE
+)
+avg_r3 <- if (!is.null(fit_clean_r3$est.avg)) {
+  as.numeric(fit_clean_r3$est.avg[1, c("ATT.avg", "S.E.", "CI.lower", "CI.upper", "p.value")])
+} else c(fit_clean_r3$att.avg, rep(NA_real_, 4))
+message("Forced r = 3 (previous-round spec): ATT = ", round(fit_clean_r3$att.avg, 3),
+        " per 100k | 95% CI [", round(avg_r3[3], 1), ", ", round(avg_r3[4], 1), "]")
+
 # ==============================================================================
 # 5. Robustness: Full 50-City Panel (No Exclusions)
 # ==============================================================================
@@ -413,31 +441,41 @@ if (RUN_PERMUTATION) {
 
 message("--- 8. Exporting results ---")
 
+# Average-ATT bootstrap SE and 95% CI: the per-period `att.avg.bound` slot is
+# not populated with a single treated unit (singular F-test covariance), but
+# `est.avg` carries the bootstrap SE / CI / p-value for the average ATT. This is
+# the interval the manuscript reports as the effect size the null can rule out
+# (JQC Editor Comment 1). Only the SUTVA-clean fit runs the bootstrap (se = TRUE).
+avg_clean <- if (!is.null(fit_clean$est.avg)) {
+  as.numeric(fit_clean$est.avg[1, c("S.E.", "CI.lower", "CI.upper", "p.value")])
+} else rep(NA_real_, 4)
+
+n_pre_clean <- n_distinct(results_clean %>% filter(rel_time <= 0) %>% pull(time_index))
+
 gsynth_att <- tibble(
   estimator       = "gsynth",
   donor_pool      = c(paste0("SUTVA-clean (", n_donors_clean, " donors)"),
-                      paste0("Full panel (", n_donors_full, " donors)")),
-  att             = c(fit_clean$att.avg, fit_full$att.avg),
-  ci_lower        = c(
-    if (!is.null(fit_clean$att.avg.bound)) fit_clean$att.avg.bound["CI.lower"] else NA_real_,
-    NA_real_
-  ),
-  ci_upper        = c(
-    if (!is.null(fit_clean$att.avg.bound)) fit_clean$att.avg.bound["CI.upper"] else NA_real_,
-    NA_real_
-  ),
-  p_value         = c(perm_p_att, NA_real_),
-  n_factors       = c(fit_clean$r.cv, fit_full$r.cv),
-  n_donors        = c(n_donors_clean, n_donors_full),
+                      paste0("Full panel (", n_donors_full, " donors)"),
+                      "Previous-round spec (r = 3 factors)"),
+  att             = c(fit_clean$att.avg, fit_full$att.avg, fit_clean_r3$att.avg),
+  se              = c(avg_clean[1], NA_real_, avg_r3[2]),
+  ci_lower        = c(avg_clean[2], NA_real_, avg_r3[3]),
+  ci_upper        = c(avg_clean[3], NA_real_, avg_r3[4]),
+  p_boot          = c(avg_clean[4], NA_real_, avg_r3[5]),
+  p_value         = c(perm_p_att, NA_real_, NA_real_),
+  n_factors       = c(fit_clean$r.cv, fit_full$r.cv, 3L),
+  n_donors        = c(n_donors_clean, n_donors_full, n_donors_clean),
   n_months        = n_months,
-  n_pre           = n_distinct(results_clean %>% filter(rel_time <= 0) %>% pull(time_index)),
-  n_post          = n_post_clean,
-  pre_rmspe       = c(rmspe_clean, rmspe_full),
-  n_sig_months    = c(n_sig_clean, NA_integer_)
+  n_pre           = n_pre_clean,
+  n_post          = c(n_post_clean, n_post_full, n_post_clean),
+  pre_rmspe       = c(rmspe_clean, rmspe_full,
+                      sqrt(mean(extract_results(fit_clean_r3, panel_clean) %>%
+                                  filter(rel_time <= 0) %>% pull(att) %>% .^2))),
+  n_sig_months    = c(n_sig_clean, NA_integer_, NA_integer_)
 )
 
 write_csv(gsynth_att, file.path(results_dir, "gsynth_att.csv"))
-message("Saved: gsynth_att.csv (ci_lower/upper from att.avg.bound; NA if bootstrap not run)")
+message("Saved: gsynth_att.csv (se/ci_lower/ci_upper/p_boot from est.avg; NA if bootstrap not run)")
 
 # Save full period-level results
 write_csv(results_clean, file.path(results_dir, "gsynth_period_effects_clean.csv"))

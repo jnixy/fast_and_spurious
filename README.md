@@ -2,7 +2,7 @@
 
 **Authors:** John Hall & Justin Nix
 
-**Status:** Manuscript resubmitted to *Journal of Quantitative Criminology* (R&R round 2, 2026-08-14)
+**Status:** Conditionally accepted at *Journal of Quantitative Criminology* (2026-09); revised to address the editor's and Reviewer 1's remaining comments
 
 **Target Journal:** *Journal of Quantitative Criminology*
 
@@ -10,11 +10,11 @@
 
 **Objectives:** This study examines the consequences of the New York Police Department's late-2022 operational shift that dramatically expanded vehicle pursuits without a formal policy change. We evaluate whether the surge in pursuits affected motor vehicle collisions, robberies, and shootings, and whether any crime-prevention benefits offset the associated collision costs.
 
-**Methods:** ITS segmented regression estimates changes in pursuit-related collisions following the October 2022 escalation; no external comparison group is required because collisions are mechanically linked to pursuit volume. For crime outcomes, a precinct-level triple-difference (DDD) design exploits pre-treatment crime-level variation across all 77 NYPD precincts, with event-study diagnostics assessing the parallel trends assumption. A cost–benefit analysis estimates the threshold of prevented crimes needed for pursuit escalation to break even.
+**Methods:** For collision outcomes, interrupted time series (ITS) segmented regression provides direct causal estimates. For crime outcomes, where within-city trends may reflect national forces, we triangulate across a city-level ITS, a generalized synthetic control comparing New York with large U.S. cities (shootings and robbery), a test of whether crime rose after the February 2025 re-restriction, and descriptive borough- and precinct-level comparisons of where any decline was concentrated. A cost-benefit analysis estimates the threshold of prevented shootings needed for pursuit escalation to break even.
 
-**Results:** Monthly pursuits surged from roughly 8 to over 160 events — a rise exceeding 2,000%. Pursuit-related collisions increased proportionally with pursuit volume and declined sharply following the February 2025 partial re-restriction that reduced pursuits by approximately three-quarters. Crime outcomes provide no evidence of deterrence: the robbery DDD estimate is positive and significant, while the shooting DDD estimate, though nominally negative, rests on non-parallel pre-trends. The February 2025 reduction in pursuits was not followed by any increase in crime.
+**Results:** Monthly pursuits rose from roughly eight to a peak above 200. Pursuit-related collisions increased proportionally with pursuit volume across all four policy regimes and declined sharply following the February 2025 policy re-restriction. The collision result is the paper's one causally identified estimate. Crime outcomes provide no evidence of deterrence. The generalized synthetic control finds NYC's post-2022 shooting trajectory statistically indistinguishable from the national counterfactual, and robbery, if anything, rose relative to comparable cities. The February 2025 reduction in pursuits was not followed by any increase in crime. Descriptive within-city comparisons align: the shooting DiD rests on non-parallel pre-trends, and the robbery DiD runs opposite to deterrence.
 
-**Conclusions:** Pursuit escalation produced clear and attributable collision harms while providing no credible evidence of crime reduction. Cost–benefit estimates suggest the threshold of prevented shootings required to offset these harms was not achieved. Agencies should require affirmative evidence of crime-prevention benefits before expanding pursuit authority.
+**Conclusions:** Pursuit escalation produced clear and attributable collision harms while providing no credible evidence of crime reduction. Cost-benefit estimates suggest the threshold of prevented shootings required to offset these harms was not achieved. Agencies should require affirmative evidence of crime-prevention benefits before expanding pursuit authority.
 
 ## Project Structure
 
@@ -59,7 +59,9 @@ vehicle_pursuits/
 │   ├── 23_synthdid.R            # Synthetic DiD (Arkhangelsky et al. 2021), precinct panel
 │   ├── 24_collision_elasticity.R # Marginal collision probability per additional pursuit
 │   ├── 25_shooting_detrend.R    # Group-detrending robustness for the precinct shooting DiD
-│   └── 26_robbery_sensitivity.R # Linear pre-trend extrapolation sensitivity, robbery DiD
+│   ├── 26_robbery_sensitivity.R # Linear pre-trend extrapolation sensitivity, robbery DiD
+│   ├── 28_national_mde.R        # National comparison: CIs as % of NYC base rate (editor request)
+│   └── 29_gsynth_annual.R       # Annual gsynth for shootings + robbery (editor request)
 ├── output/
 │   ├── plots/                # Visualizations (PNG + PDF)
 │   ├── tables/                # Summary and diagnostic tables
@@ -86,7 +88,7 @@ vehicle_pursuits/
         └── response-memo.md        # Point-by-point response to editor/reviewers
 ```
 
-**Scripts marked `[legacy]`** are retained for reproducibility but are not part of the active publication pipeline. **Scripts 19-26** are the R&R round-2 robustness battery (Phase 6 of `00_run_all.R`): 20 and 21 feed numbers directly into the manuscript (the Tisch section and the precinct×time-trend footnote, respectively); 22-26 are supporting robustness checks not yet cited in manuscript prose.
+**Scripts marked `[legacy]`** are retained for reproducibility but are not part of the active publication pipeline. **Scripts 19-29** are the R&R robustness battery (Phase 6 of `00_run_all.R`): 20 and 21 feed numbers into the manuscript (the Tisch section and the precinct×time-trend footnote); 28-29 add the national robbery synthetic control and the effect-size table requested at conditional acceptance; 22-26 are supporting robustness checks not cited in manuscript prose. Script 27 (an undocumented crash-severity exploration) is not included in this package.
 
 ## Data Sources
 
@@ -119,16 +121,13 @@ All primary data sourced from NYC Open Data.
 
 1. **Interrupted Time Series (ITS):** Primary method. Segmented regression with Newey-West HAC standard errors (lag = 6), month fixed effects for seasonality, and a COVID indicator (Mar 2020–Jun 2021). Sensitivity analysis over intervention date reported in Appendix A. Within-NYC temporal placebo tests and cross-city placebo tests (Baltimore, Boston, Philadelphia) were conducted as robustness checks but are not shown in the appendix.
 
-2. **Borough-Level ITS:** ITS estimated separately for each of the five NYC boroughs. Dose-response robustness check relates borough-level pursuit intensity to observed crime changes.
+2. **National Comparison — Generalized Synthetic Control:** gsynth (`@xu2017gsc`) with NYC as the single treated unit against a donor pool of large U.S. cities. Shootings use monthly Gun Violence Archive counts (AmericanViolence.org / Sharkey); robbery uses an annual FBI UCR panel (34 cities, 2014–2024). Cross-validation selects the number of latent factors — under the current `gsynth`, zero, so the estimator reduces to two-way fixed effects. Placebo-in-space permutation inference (script 19) and the effect-size-in-percentage-terms table (scripts 28–29) support the null. Both outcome comparisons are null-or-positive: NYC did not outperform comparable cities.
 
-3. **Precinct-Level Panel Analysis:** Three complementary designs using 78 precincts × 93 months:
-   - TWFE (`feols(y ~ pursuit_events | pct + month_date, cluster = ~pct)`)
-   - Difference-in-differences-in-differences (DDD) contrasting precincts by pre-treatment crime level quartile
-   - Sun-Abraham staggered adoption event study (`sunab()` via `fixest`)
+3. **Re-restriction ITS (script 20):** Four-regime segmented model around the February 2025 partial re-restriction ("reverse experiment"). Crime did not rise after pursuits fell.
 
-4. **Event Study / Multi-Period:** Four-regime segmented regression (pre-escalation Jan 2018–Sep 2022; escalation Oct 2022–Jul 2023; post-Maddrey Aug 2023–Jan 2025; post-Tisch Feb 2025–Sep 2025). The Tisch reversal serves as a built-in falsification test for the deterrence hypothesis.
+4. **Community-Level Heterogeneity (descriptive):** Borough-level ITS and a precinct-level heterogeneous-effects DiD (77 precincts × 96 months) grouping precincts by pre-treatment crime level. Event-study diagnostics show non-parallel pre-trends for the crime outcomes, so these are reported as descriptive evidence on where the crime decline was concentrated, not as causal estimates. (Also: precinct TWFE and Sun-Abraham staggered event study as supporting checks.)
 
-5. **Cost-Benefit Analysis:** Pursuit crash costs (well-identified via collision data) vs. crime reduction benefits (require causal attribution assumption). Breakeven analysis: minimum causal share at which benefits exceed costs (~4.5%). Sensitivity grid over VSL, fatality rate, shooting reduction, and causal attribution.
+5. **Cost-Benefit Analysis:** Pursuit crash costs (well-identified via collision data) vs. shooting-prevention benefits (require a causal attribution assumption). Break-even analysis: minimum causal share of the ITS-estimated shooting decline at which benefits exceed collision costs. Sensitivity grid over VSL, fatality rate, and causal attribution.
 
 ### R&R Round-2 Robustness Battery (Phase 6)
 
@@ -171,9 +170,9 @@ The following designs were estimated but are not included in the published manus
    ```
 
    Or run scripts individually in dependency order:
-   `01 → 03 → 06 → 07 → 08 → 14 (ITS + dose-response) → 10 → 17 → 15 → 16 → 00_regenerate → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 19`
+   `01 → 03 → 06 → 07 → 08 → 14 (ITS + dose-response) → 10 → 17 → 15 → 16 → 00_regenerate → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 19 → 29 → 28`
 
-   **Critical:** script 17 must precede script 15 (script 15 reads `pct_ddd_models.rds` produced by 17). Script 08 must precede script 14. Script 19 requires script 18's cached `output/gsynth_results/gsynth_robustness.rds` (step 2 above).
+   **Critical:** script 17 must precede script 15 (script 15 reads `pct_ddd_models.rds` produced by 17). Script 08 must precede script 14 and script 29. Scripts 19 and 28 require script 18's outputs (`gsynth_robustness.rds` and the `est.avg` columns of `gsynth_att.csv`); run script 18 first (step 2 above). Script 28 also reads script 29's output.
 
 4. Render manuscript: `quarto render "manuscript/R&R/revised-manuscript.qmd" --to pdf` (or `--to docx`)
 

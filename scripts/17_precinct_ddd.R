@@ -50,6 +50,7 @@
 library(tidyverse)
 library(lubridate)
 library(fixest)
+library(patchwork)
 library(here)
 library(janitor)
 
@@ -703,9 +704,9 @@ plot_es <- function(es_df, outcome_label, col_fill, col_line,
              label = "Oct 2022", vjust = 2, hjust = 1.1,
              size = 4.0, color = "grey40") +
     labs(
-      title    = paste0("DD Event Study: ", outcome_label),
+      title    = paste0("DiD event study: ", outcome_label),
       subtitle = sprintf(
-        "High vs. low pre-treatment crime precincts | DD: b = %.3f, SE = %.3f, p %s",
+        "High vs. low pre-treatment crime precincts | DiD: b = %.3f, SE = %.3f, p %s",
         ddd_b, ddd_se, p_fmt
       ),
       x = "Quarter relative to October 2022 policy change",
@@ -724,7 +725,7 @@ plot_es <- function(es_df, outcome_label, col_fill, col_line,
   invisible(p)
 }
 
-plot_es(
+p_ddd_s <- plot_es(
   es_df         = es_shoot,
   outcome_label = "Shooting Incidents",
   col_fill      = COL_SHOOTING,
@@ -735,7 +736,7 @@ plot_es(
   fig_name      = "fig_precinct_ddd_shooting"
 )
 
-plot_es(
+p_ddd_r <- plot_es(
   es_df         = es_rob,
   outcome_label = "Robbery",
   col_fill      = COL_ROBBERY,
@@ -746,7 +747,7 @@ plot_es(
   fig_name      = "fig_precinct_ddd_robbery"
 )
 
-plot_es(
+p_ddd_gv <- plot_es(
   es_df         = es_gv,
   outcome_label = "Gun Violence",
   col_fill      = COL_GUNVIOL,
@@ -757,7 +758,7 @@ plot_es(
   fig_name      = "fig_precinct_ddd_gun_violence"
 )
 
-plot_es(
+p_ddd_c <- plot_es(
   es_df         = es_crash,
   outcome_label = "Pursuit Crashes",
   col_fill      = COL_COLLISION,
@@ -767,6 +768,45 @@ plot_es(
   ddd_p         = cr_ddd$p_value,
   fig_name      = "fig_precinct_ddd_crashes"
 )
+
+# ---- Combined 4-panel event-study figure (manuscript Figure) ----------------
+# Replaces the previous magick::image_trim assembly in the .qmd (which cropped
+# panel titles). One patchwork composite, one shared caption; the .qmd chunk
+# just includes this PNG. Row order matches the caption: shooting / gun violence
+# on top, robbery / pursuit crashes on the bottom.
+
+slim_panel <- function(p) {
+  p +
+    labs(x = NULL, y = NULL) +
+    theme(
+      plot.title    = element_text(size = rel(0.95)),
+      plot.subtitle = element_text(size = rel(0.72), color = "grey30"),
+      axis.text.x   = element_text(size = 8),
+      axis.text.y   = element_text(size = 8),
+      plot.margin   = margin(6, 8, 6, 6)
+    )
+}
+
+ddd_combined <- (slim_panel(p_ddd_s) | slim_panel(p_ddd_gv)) /
+                (slim_panel(p_ddd_r) | slim_panel(p_ddd_c)) +
+  plot_annotation(
+    caption = paste0(
+      "Points: quarterly difference-in-differences coefficients (high minus low ",
+      "pre-treatment crime precincts), relative to bin -1 (Jul-Sep 2022).\n",
+      "Bands: 95% confidence intervals. Standard errors clustered by precinct ",
+      "(G = 77). Dashed vertical line: October 2022 policy change.\n",
+      "Pre-period coefficients departing from zero for the crime outcomes ",
+      "indicate non-parallel pre-trends; the collision panel is consistent with ",
+      "parallel trends."
+    )
+  ) &
+  theme(plot.caption = element_text(color = "grey45", size = 8, hjust = 0))
+
+ggsave(file.path(plot_dir, "fig_precinct_ddd_combined.png"), ddd_combined,
+       width = 13, height = 9, dpi = 300, bg = "white")
+ggsave(file.path(plot_dir, "fig_precinct_ddd_combined.pdf"), ddd_combined,
+       width = 13, height = 9, bg = "white")
+message("  Saved: fig_precinct_ddd_combined.png/.pdf")
 
 # ---- 5c/5d: Quartile dose-response dot plots ---------------------------------
 # Visualize the 4 per-group post coefficients from the factor specification.

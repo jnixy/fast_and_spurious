@@ -1,0 +1,4 @@
+outcome,estimator,panel,base_rate,att,ci_lower,ci_upper,pre_rmspe,note,att_pct,ci_lower_pct,ci_upper_pct,ci_mde_pct,rmspe_mde,rmspe_mde_pct
+Shootings,gsynth (primary),monthly,10.86,-0.3,-23.33,22.72,4.73,GVA shooting rate; parallel pre-trend; placebo-in-space primary inference,-2.78,-214.74,209.18,214.74,9.46,87.07
+Shootings,gsynth (bridge),annual,10.77,-0.15,-29.2,28.9,3.29,annual aggregation of the same GVA series; CV selects zero factors,-1.41,-271.19,268.37,271.19,6.58,61.07
+Robbery,gsynth,annual,169.05,70.11,-71.69,211.91,35.64,Kaplan UCR robbery rate; NYC robbery diverges upward pre-treatment,41.47,-42.41,125.35,125.35,71.28,42.16

@@ -278,39 +278,49 @@ if (nrow(tisch_comparison) == 2) {
 # 9. Visualizations ============================================================
 
 # 9a. Time series with regime shading
+#
+# The four regime names are drawn as a label strip above the panel, each
+# centered over the midpoint of its shaded band, so the names line up with the
+# regions they describe (JQC R1 figure comment). The "Escalation" band is only
+# ~10 months wide, so its label is raised one line to clear its neighbours. The
+# fill legend is dropped — the strip labels now identify the regions.
 regime_rects <- tibble(
-  xmin = c(as.Date("2018-01-01"), ESCALATION, MADDREY, TISCH),
-  xmax = c(ESCALATION, MADDREY, TISCH, as.Date("2025-12-01")),
+  xmin   = c(as.Date("2018-01-01"), ESCALATION, MADDREY, TISCH),
+  xmax   = c(ESCALATION, MADDREY, TISCH, as.Date("2025-12-01")),
   regime = c("Pre-escalation", "Escalation", "Post-Maddrey", "Post-Tisch"),
-  fill = c("grey95", "#FDE8E8", "#FFECD2", "#E8F4FD")
-)
+  fill   = c("grey95", "#FDE8E8", "#FFECD2", "#E8F4FD")
+) %>%
+  mutate(mid = as.Date((as.numeric(xmin) + as.numeric(xmax)) / 2,
+                       origin = "1970-01-01"))
+
+regime_fill <- setNames(regime_rects$fill, regime_rects$regime)
 
 for (o in outcomes) {
 
   p <- ggplot(es, aes(month_date, .data[[o$var]])) +
     geom_rect(data = regime_rects,
               aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf, fill = regime),
-              inherit.aes = FALSE, alpha = 0.5) +
-    scale_fill_manual(values = c("Pre-escalation" = "grey95", "Escalation" = "#FDE8E8",
-                                 "Post-Maddrey" = "#FFECD2", "Post-Tisch" = "#E8F4FD")) +
+              inherit.aes = FALSE, alpha = 0.55) +
+    scale_fill_manual(values = regime_fill, guide = "none") +
+    geom_vline(xintercept = c(ESCALATION, MADDREY, TISCH),
+               linetype = "dashed", color = "grey45", linewidth = 0.4) +
     geom_line(color = o$col, linewidth = 0.8) +
     geom_point(color = o$col, size = 1.2, alpha = 0.5) +
-    geom_vline(xintercept = c(ESCALATION, MADDREY, TISCH),
-               linetype = "dashed", color = "grey40", linewidth = 0.5) +
-    annotate("text", x = ESCALATION, y = Inf, label = "Chell\nEscalation",
-             vjust = 1.5, hjust = -0.1, size = 2.8, color = "grey30") +
-    annotate("text", x = MADDREY, y = Inf, label = "Maddrey\nMemo",
-             vjust = 1.5, hjust = -0.1, size = 2.8, color = "grey30") +
-    annotate("text", x = TISCH, y = Inf, label = "Tisch\nReversal",
-             vjust = 1.5, hjust = -0.1, size = 2.8, color = "grey30") +
-    scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    geom_text(data = regime_rects, inherit.aes = FALSE,
+              aes(x = mid, y = Inf, label = regime),
+              vjust = -0.7, size = 2.8, fontface = "bold", color = "grey25") +
+    coord_cartesian(clip = "off") +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y",
+                 expand = expansion(mult = 0.01)) +
     labs(
       title = paste0("Four-Regime Analysis: ", o$label),
-      subtitle = "Shading indicates policy regime",
-      x = NULL, y = paste("Monthly", o$label)
+      x = NULL, y = paste("Monthly", o$label),
+      caption = paste("Dashed vertical lines mark the Oct 2022 escalation, the",
+                      "Aug 2023 Maddrey compliance memo, and the Feb 2025 Tisch",
+                      "re-restriction.")
     ) +
     theme_pursuit() +
-    guides(fill = guide_legend(override.aes = list(alpha = 0.4)))
+    theme(plot.margin = margin(t = 20, r = 14, b = 6, l = 8))
 
   save_plot(p, paste0("event_regime_", gsub(" ", "_", o$var)))
 }

@@ -1,3 +1,4 @@
-estimator,donor_pool,att,ci_lower,ci_upper,p_value,n_factors,n_donors,n_months,n_pre,n_post,pre_rmspe,n_sig_months
-gsynth,SUTVA-clean (75 donors),1.9633492380108162,NA,NA,NA,3,75,144,105,39,3.7118016838411556,0
-gsynth,Full panel (49 donors),-1.826314046709568,NA,NA,NA,1,49,144,105,39,3.698309728474417,NA
+estimator,donor_pool,att,se,ci_lower,ci_upper,p_boot,p_value,n_factors,n_donors,n_months,n_pre,n_post,pre_rmspe,n_sig_months
+gsynth,SUTVA-clean (75 donors),-0.30192040509852425,11.748467720019352,-23.328494009867853,22.724653199670804,0.9794976568480025,NA,0,75,144,105,39,4.729606791676755,0
+gsynth,Full panel (49 donors),-1.8263140467095564,NA,NA,NA,NA,NA,1,49,144,105,39,3.6983097284744173,NA
+gsynth,Previous-round spec (r = 3 factors),1.9633492380107969,12.903140441190532,-23.326341314184905,27.253039790206497,0.8790602902984881,NA,3,75,144,105,39,3.7118016838411556,NA

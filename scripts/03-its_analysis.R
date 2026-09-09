@@ -43,6 +43,7 @@ library(lubridate)
 library(scales)
 library(sandwich)
 library(lmtest)
+library(patchwork)
 library(here)
 
 
@@ -206,9 +207,75 @@ for (o in outcomes) {
     dw_stat    = dw,
     lb_pvalue  = lb$p.value,
     cum_effect = cum_eff,
-    avg_effect = avg_eff
+    avg_effect = avg_eff,
+    plot_df    = its_loop %>%
+      select(month_date, observed, fitted, counterfactual, D)
   )
 }
+
+
+# 2b. Composite 4-panel ITS figure (manuscript Figure 2) =======================
+#
+# JQC R1 figure comment: the previous version stitched four separately-saved
+# PNGs with magick::image_trim in the .qmd, which cropped panel titles and left
+# uneven whitespace, and used a different hue per panel that carried no
+# information. This builds one patchwork composite: a single neutral colour for
+# every panel, a 2-year x-axis to de-crowd the labels, consistent margins, and
+# one shared caption. The .qmd chunk just includes this PNG.
+
+NEUTRAL_ITS <- "#2B2D42"   # single slate colour for all four panels
+
+panel_its <- function(df, ttl) {
+  ggplot(df, aes(month_date)) +
+    geom_ribbon(data = filter(df, D == 1),
+                aes(ymin = counterfactual, ymax = fitted),
+                fill = NEUTRAL_ITS, alpha = 0.15) +
+    geom_point(aes(y = observed), color = NEUTRAL_ITS, alpha = 0.35, size = 0.9) +
+    geom_line(aes(y = fitted), color = NEUTRAL_ITS, linewidth = 0.8) +
+    geom_line(aes(y = counterfactual), color = "grey55",
+              linetype = "dashed", linewidth = 0.7) +
+    geom_vline(xintercept = INTERVENTION, linetype = "dotted",
+               color = "grey30", linewidth = 0.5) +
+    scale_x_date(date_breaks = "2 years", date_labels = "%Y",
+                 expand = expansion(mult = 0.02)) +
+    scale_y_continuous(expand = expansion(mult = c(0.02, 0.10))) +
+    labs(title = ttl, x = NULL, y = NULL) +
+    theme_pursuit(base_size = 11) +
+    theme(plot.title   = element_text(size = rel(1.0), face = "bold"),
+          plot.margin  = margin(6, 10, 6, 8))
+}
+
+comp_specs <- list(
+  c("Pursuit Collisions",                     "Pursuit-related collisions"),
+  c("Shooting Incidents",                     "Shooting incidents"),
+  c("Gun Violence (Shootings + Shots Fired)", "Gun violence (shootings + shots-fired)"),
+  c("Robberies",                              "Robberies")
+)
+
+its_panels <- lapply(comp_specs, function(s)
+  panel_its(its_results[[s[1]]]$plot_df, s[2]))
+its_panels[[1]] <- its_panels[[1]] + labs(y = "Monthly count")
+its_panels[[3]] <- its_panels[[3]] + labs(y = "Monthly count")
+
+its_composite <- (its_panels[[1]] | its_panels[[2]]) /
+                 (its_panels[[3]] | its_panels[[4]]) +
+  plot_annotation(
+    caption = paste0(
+      "Solid line: segmented regression fit. Dashed line: counterfactual ",
+      "projected from the pre-intervention trend.\nShaded band: post-intervention ",
+      "effect (fit minus counterfactual). Dotted vertical line: October 2022 ",
+      "escalation.\nPoints: observed monthly counts. Newey-West HAC standard ",
+      "errors (lag = 6)."
+    )
+  ) &
+  theme(plot.caption = element_text(color = "grey45", size = 8, hjust = 0,
+                                    margin = margin(t = 8)))
+
+ggsave(file.path(plot_dir, "ITS_composite_4panel.png"), its_composite,
+       width = 9, height = 7, dpi = 300, bg = "white")
+ggsave(file.path(plot_dir, "ITS_composite_4panel.pdf"), its_composite,
+       width = 9, height = 7, bg = "white")
+message("Saved: ITS_composite_4panel.png / .pdf")
 
 
 # 3. Summary table =============================================================
