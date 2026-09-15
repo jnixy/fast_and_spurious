@@ -28,7 +28,6 @@
 #   - output/its_results/its_placebo_tests.csv
 #   - output/its_results/comparative_its_panel.csv
 #   - output/plots/ITS_*.png/.pdf               -- ITS figures (one per outcome)
-#   - code/replication/its_panel.csv            -- analysis-ready panel for cross-language replication
 #
 # Runtime: ~1–2 min
 # ==============================================================================
@@ -458,13 +457,6 @@ write_csv(its_pub, file.path(results_dir, "its_newey_west.csv"))
 message("  Regenerated: output/its_results/its_newey_west.csv\n")
 message("  Source: canonical script 03 model (Y = b0 + b1*T + b2*D + b3*P + seasonality + covid)\n")
 message("  Estimates should now match its_coefficients.csv point estimates.\n\n")
-
-# Export ITS panel for replication — Python and Stata scripts load this directly.
-# Saves the analysis-ready panel (T, D, P, outcomes, month_factor, covid) so that
-# replication scripts do not need to re-derive ITS variables from monthly_panel.csv.
-dir.create(here("code", "replication"), showWarnings = FALSE, recursive = TRUE)
-write_csv(its, here("code", "replication", "its_panel.csv"))
-message("  Exported: code/replication/its_panel.csv (ITS analysis-ready panel)\n\n")
 
 # Verify consistency: D coefficient for shootings should match its_coefficients.csv
 shoot_d_pub  <- its_pub    %>% filter(outcome == "Shootings",         term == "post") %>% pull(estimate)

@@ -10,8 +10,3 @@ renv/.cache/
 
 # Raw data is not distributed here -- see README's Data Sources section
 data/
-
-# Quarto render intermediates
-*.rmarkdown
-*_files/
-.quarto/

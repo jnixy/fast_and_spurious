@@ -4,7 +4,7 @@
 #
 # Purpose:
 #   Executes all active analysis scripts in dependency order. Produces all
-#   outputs needed to render manuscript/manuscript.qmd.
+#   tables, figures, and model objects underlying the published findings.
 #
 # Usage (from project root):
 #   Rscript scripts/00_run_all.R
@@ -12,7 +12,7 @@
 #   source("scripts/00_run_all.R")
 #
 # Prerequisites:
-#   - Raw data files placed in data/ (see CLAUDE.md for file list)
+#   - Raw data files placed in data/ (see README.md's Data Sources table)
 #   - Required packages installed (tidyverse, fixest, sandwich, lmtest,
 #     broom, here, janitor, tidysynth, fwildclusterboot, sf, scales, gsynth,
 #     synthdid — the last via remotes::install_github("synth-inference/synthdid"))
@@ -129,7 +129,7 @@ message("All active scripts completed successfully.")
 message("Total elapsed: ", total_min, " minutes")
 message("Finished: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
 message(strrep("=", 60))
-message("\nNext step: quarto render manuscript/manuscript.qmd")
+message("\nAll tables, figures, and model objects are in output/.")
 
 # ==============================================================================
 # Legacy scripts (not in main manuscript — retained for reproducibility)

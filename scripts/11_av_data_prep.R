@@ -31,7 +31,7 @@ dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)
 
 cat("--- Loading AV Files ---\n\n")
 
-av_dir <- here("data", "American_violence")
+av_dir <- here("data", "american_violence")
 av_files <- list.files(av_dir, pattern = "\\.csv\\.csv$", full.names = TRUE)
 
 if (length(av_files) == 0) {

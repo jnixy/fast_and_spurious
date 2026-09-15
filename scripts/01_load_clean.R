@@ -292,9 +292,9 @@ rm(shooting_monthly, sf_monthly)
 
 
 # GIVE statewide data (retained for reproducibility; not used in active pipeline)
-# CLAUDE.md notes this data is near-zero for non-NYC jurisdictions after 2018,
-# making it unusable for DiD. Load is gated to avoid ~1 s of unnecessary I/O
-# on every pipeline run. To inspect: change if (FALSE) to if (TRUE).
+# This data is near-zero for non-NYC jurisdictions after 2018, making it
+# unusable for DiD. Load is gated to avoid ~1 s of unnecessary I/O on every
+# pipeline run. To inspect: change if (FALSE) to if (TRUE).
 if (FALSE) {
   give <- read_csv(here("data", "give_data4.csv"), show_col_types = FALSE) %>%
     clean_names() %>%
