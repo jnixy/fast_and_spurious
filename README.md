@@ -1,4 +1,4 @@
-# The Effects of Lifting Vehicle Pursuit Restrictions: Evidence from New York City
+# The fast and the spurious: A causal evaluation of NYPD's pursuit policy, 2022-2025
 
 **Authors:** John Hall & Justin Nix
 
@@ -19,9 +19,8 @@ This repository contains the analysis pipeline underlying the paper — everythi
 ## Citation
 
 ```
-Hall, J., & Nix, J. (2026). The effects of lifting vehicle pursuit restrictions:
-Evidence from New York City. Journal of Quantitative Criminology. Advance
-online publication. DOI: forthcoming
+Hall, J., & Nix, J. (2026). The fast and the spurious: A causal evaluation of NYPD's pursuit policy, 2022-2025.
+Journal of Quantitative Criminology. Advance online publication. DOI: forthcoming
 ```
 
 Update the DOI above once JQC assigns one; a BibTeX entry will be added when available.
