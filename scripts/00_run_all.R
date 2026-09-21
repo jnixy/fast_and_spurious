@@ -121,6 +121,12 @@ run_script("scripts/19_gsynth_permutation.R")    # gsynth placebo-in-space permu
 run_script("scripts/29_gsynth_annual.R")         # annual gsynth: shootings + robbery
 run_script("scripts/28_national_mde.R")          # national CIs in percentage terms
 
+# ── Phase 6c: Print-width figures for journal page proofs ──────────────────────
+# Rebuilds Figures 1, 2, 5, 7 at print width (larger fonts, no baked-in notes).
+# Reads saved outputs of scripts 01, 03, 14, 17 only; the original figures are
+# left untouched and the rebuilds go to output/plots/proof/.
+run_script("scripts/30_proof_figures.R")         # proof-size Figs 1, 2, 5, 7
+
 # ── Summary ────────────────────────────────────────────────────────────────────
 total_min <- round((proc.time() - t_start)[["elapsed"]] / 60, 1)
 

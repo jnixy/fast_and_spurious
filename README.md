@@ -36,7 +36,7 @@ fast_and_spurious/
 │   ├── pg212-39-vehicle-pursuits.pdf          # NYPD Patrol Guide on vehicle pursuits
 │   └── NYPD_Vehicle_Pursuit_Timeline.docx     # Timeline of policy changes (authors' compilation)
 ├── data/                      # Raw CSV/geojson/RDS source files — NOT included; see Data Sources below
-├── scripts/                   # 31 analysis scripts; see "Scripts" below
+├── scripts/                   # 32 analysis scripts; see "Scripts" below
 ├── output/
 │   ├── plots/                 # Visualizations (PNG + PDF)
 │   ├── tables/                # Summary and diagnostic tables
@@ -83,6 +83,7 @@ fast_and_spurious/
 | `19_gsynth_permutation.R` | gsynth placebo-in-space permutation inference (needs `18`'s cached output — see Replication) |
 | `29_gsynth_annual.R` | Annual gsynth for shootings + robbery (national donor panels) |
 | `28_national_mde.R` | National comparison estimates expressed as % of NYC's base rate |
+| `30_proof_figures.R` | Print-width rebuilds of Figures 1, 2, 5, 7 (journal page-proof fonts); reads saved outputs of `01`/`03`/`14`/`17`, writes `output/plots/proof/` |
 | `18_gsynth.R` | Generalized synthetic control (monthly shootings). Run manually first — see Replication. |
 
 **Retained but not part of the active pipeline (`[legacy]`)** — identification failed or the design was superseded, kept for transparency:
